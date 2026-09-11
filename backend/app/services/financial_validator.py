@@ -8,7 +8,7 @@ from backend.app.schemas.validation import (
 )
 from backend.app.core.logging import logger
 
-TOLERANCE_DEFAULT = 0.05
+TOLERANCE_DEFAULT = 1.0  # Allow rounding differences in financial reports
 
 def to_float(val: Any) -> Optional[float]:
     if val is None:
@@ -45,7 +45,7 @@ def check_equality(
     tolerance: float = TOLERANCE_DEFAULT,
     not_applicable_reason: str = "Required fields are missing."
 ) -> ValidationCheck:
-    """Helper to generate a consistent ValidationCheck object."""
+    """Generates a consistent ValidationCheck object."""
     if calculated_value is None or reported_value is None:
         return ValidationCheck(
             check_id=check_id,
@@ -61,14 +61,16 @@ def check_equality(
         )
     
     variance = round(abs(calculated_value - reported_value), 4)
-    # Check relative or absolute tolerance
-    is_pass = variance <= tolerance or (abs(reported_value) > 0 and (variance / abs(reported_value)) <= 0.001)
+    # Check absolute tolerance or relative tolerance <= 0.001 (0.1%)
+    max_val = max(abs(reported_value), abs(calculated_value), 1.0)
+    rel_diff = variance / max_val
+    is_pass = variance <= tolerance or rel_diff <= 0.001
     
     status = ValidationStatus.PASS if is_pass else ValidationStatus.FAIL
     explanation = (
-        f"PASSED: Calculated value {calculated_value:,.2f} matches reported value {reported_value:,.2f} (Variance: {variance:,.4f} <= {tolerance})."
+        f"PASSED: Calculated value {calculated_value:,.2f} matches reported value {reported_value:,.2f} (Variance: {variance:,.2f} <= {tolerance})."
         if is_pass else
-        f"FAILED: Calculated value {calculated_value:,.2f} does not reconcile with reported value {reported_value:,.2f} (Variance: {variance:,.4f} > {tolerance})."
+        f"FAILED: Calculated value {calculated_value:,.2f} does not reconcile with reported value {reported_value:,.2f} (Variance: {variance:,.2f} > {tolerance})."
     )
     
     return ValidationCheck(
@@ -188,8 +190,12 @@ def validate_balance_sheet(extracted: ExtractedData) -> List[ValidationCheck]:
     checks: List[ValidationCheck] = []
     
     # Check if multi-period table exists
-    bs_periods = extracted.tables.get("balance_sheet_periods", [])
-    
+    bs_periods = []
+    if isinstance(extracted.tables, dict):
+        bs_periods = extracted.tables.get("balance_sheet_periods", [])
+    elif isinstance(extracted.tables, list):
+        bs_periods = extracted.tables
+        
     if bs_periods:
         for idx, row in enumerate(bs_periods):
             period = str(row.get("period", f"Period {idx+1}"))
@@ -221,7 +227,6 @@ def validate_balance_sheet(extracted: ExtractedData) -> List[ValidationCheck]:
                     operands={"current_assets": curr_a, "non_current_assets": non_curr_a, "total_assets": assets}
                 ))
     else:
-        # Fallback to summary fields
         fields = extracted.summary_fields
         assets = to_float(fields.get("total_assets"))
         cap_liab = to_float(fields.get("total_capital_and_liabilities") or fields.get("total_equity_and_liabilities"))
@@ -242,8 +247,12 @@ def validate_balance_sheet(extracted: ExtractedData) -> List[ValidationCheck]:
 def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
     checks: List[ValidationCheck] = []
     
-    pnl_periods = extracted.tables.get("pnl_periods", [])
-    
+    pnl_periods = []
+    if isinstance(extracted.tables, dict):
+        pnl_periods = extracted.tables.get("pnl_periods", [])
+    elif isinstance(extracted.tables, list):
+        pnl_periods = extracted.tables
+        
     if pnl_periods:
         for idx, row in enumerate(pnl_periods):
             period = str(row.get("period", f"Period {idx+1}"))
@@ -273,7 +282,7 @@ def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
                 not_applicable_reason="Interest earned or other income not present."
             ))
             
-            # Rule 2: Interest Expended + Operating Expenses + Provisions & Contingencies ≈ Total Expenditure
+            # Rule 2: Total Expenditure Reconciliation
             calc_exp = None
             if interest_expended is not None and operating_expenses is not None:
                 calc_exp = interest_expended + operating_expenses + (provisions or 0.0)
@@ -287,7 +296,7 @@ def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
                 not_applicable_reason="Expenditure breakdown components not present."
             ))
             
-            # Rule 3: Total Income - Total Expenditure ≈ Consolidated Net Profit before Minority Interest
+            # Rule 3: Total Income - Total Expenditure ≈ Net Profit before Minority
             calc_pbt = (total_income - total_expenditure) if (total_income is not None and total_expenditure is not None) else None
             checks.append(check_equality(
                 check_id=f"PNL_PROFIT_BEFORE_MINORITY_{period}",
@@ -299,7 +308,7 @@ def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
                 not_applicable_reason="Total Income, Total Expenditure, or Net Profit before Minority missing."
             ))
             
-            # Rule 4: Profit before Minority Interest - Minority Interest ≈ Consolidated Net Profit attributable to Group
+            # Rule 4: Group Net Profit
             calc_group_profit = (net_profit_before_minority - minority_interest) if net_profit_before_minority is not None else None
             checks.append(check_equality(
                 check_id=f"PNL_NET_PROFIT_GROUP_{period}",
@@ -311,17 +320,10 @@ def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
                 not_applicable_reason="Minority interest or net profit breakdown not available."
             ))
     else:
-        # Fallback to summary fields
         fields = extracted.summary_fields
         interest_earned = to_float(fields.get("interest_earned"))
         other_income = to_float(fields.get("other_income"))
         total_income = to_float(fields.get("total_income"))
-        interest_expended = to_float(fields.get("interest_expended"))
-        operating_expenses = to_float(fields.get("operating_expenses"))
-        provisions = to_float(fields.get("provisions_and_contingencies"))
-        total_expenditure = to_float(fields.get("total_expenditure"))
-        pbt = to_float(fields.get("net_profit_before_minority_interest"))
-        group_profit = to_float(fields.get("net_profit_attributable_to_group"))
         
         calc_income = (interest_earned + other_income) if (interest_earned is not None and other_income is not None) else None
         checks.append(check_equality(
@@ -339,8 +341,12 @@ def validate_profit_and_loss(extracted: ExtractedData) -> List[ValidationCheck]:
 def validate_cash_flow(extracted: ExtractedData) -> List[ValidationCheck]:
     checks: List[ValidationCheck] = []
     
-    cf_periods = extracted.tables.get("cash_flow_periods", [])
-    
+    cf_periods = []
+    if isinstance(extracted.tables, dict):
+        cf_periods = extracted.tables.get("cash_flow_periods", [])
+    elif isinstance(extracted.tables, list):
+        cf_periods = extracted.tables
+        
     if cf_periods:
         for idx, row in enumerate(cf_periods):
             period = str(row.get("period", f"Period {idx+1}"))
@@ -363,27 +369,26 @@ def validate_cash_flow(extracted: ExtractedData) -> List[ValidationCheck]:
             checks.append(check_equality(
                 check_id=f"CF_NET_INCREASE_{period}",
                 formula_name=f"Net Increase in Cash Reconciliation ({period})",
-                formula_description=f"Operating + Investing + Financing Cash Flow + FX ≈ Net Increase in Cash for {period}",
+                formula_description=f"Operating ({ocf or 0:,.0f}) + Investing ({icf or 0:,.0f}) + Financing ({fcf or 0:,.0f}) + FX ({fx or 0:,.0f}) ≈ Net Increase ({net_inc or 0:,.0f})",
                 calculated_value=calc_net,
                 reported_value=net_inc,
                 operands={"period": period, "operating_cash_flow": ocf, "investing_cash_flow": icf, "financing_cash_flow": fcf, "fx_adjustment": fx, "reported_net_increase": net_inc},
-                not_applicable_reason="One or more cash flow activity sections missing."
+                not_applicable_reason="One or more cash flow activity totals missing."
             ))
             
             # Rule 2: Opening Cash + Net Increase in Cash + applicable adjustments ≈ Closing Cash
             calc_closing = None
-            if opening is not None and net_inc is not None:
-                calc_closing = opening + net_inc + adjustments
-            elif opening is not None and calc_net is not None:
-                calc_closing = opening + calc_net + adjustments
+            effective_net = net_inc if net_inc is not None else calc_net
+            if opening is not None and effective_net is not None:
+                calc_closing = opening + effective_net + adjustments
                 
             checks.append(check_equality(
                 check_id=f"CF_CLOSING_CASH_{period}",
                 formula_name=f"Closing Cash Balance Reconciliation ({period})",
-                formula_description=f"Opening Cash + Net Increase in Cash + Adjustments ≈ Closing Cash for {period}",
+                formula_description=f"Opening Cash ({opening or 0:,.0f}) + Net Increase ({effective_net or 0:,.0f}) ≈ Closing Cash ({closing or 0:,.0f})",
                 calculated_value=calc_closing,
                 reported_value=closing,
-                operands={"period": period, "opening_cash": opening, "net_increase": net_inc or calc_net, "adjustments": adjustments, "reported_closing_cash": closing},
+                operands={"period": period, "opening_cash": opening, "net_increase": effective_net, "adjustments": adjustments, "reported_closing_cash": closing},
                 not_applicable_reason="Opening or closing cash balances missing."
             ))
     else:

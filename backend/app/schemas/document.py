@@ -45,12 +45,15 @@ class LineItem(BaseModel):
     page_number: Optional[int] = 1
 
 class ExtractedData(BaseModel):
+    statement_title: Optional[str] = None
+    reporting_period: Optional[str] = None
     summary_fields: Dict[str, Union[ExtractedField, Any]] = Field(default_factory=dict)
-    tables: Dict[str, List[Dict[str, Any]]] = Field(default_factory=dict)
+    tables: Union[Dict[str, Any], List[Dict[str, Any]]] = Field(default_factory=dict)
     line_items: Optional[List[LineItem]] = None
     raw_text_by_page: Dict[str, str] = Field(default_factory=dict)
     periods_detected: Optional[List[str]] = Field(default_factory=list)
-    currency: Optional[str] = "USD"
+    currency: Optional[str] = "INR"
+    unit: Optional[str] = None
     notes: Optional[List[str]] = Field(default_factory=list)
 
 class ProcessingMetadata(BaseModel):
