@@ -132,18 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
     previewFilesize.textContent = formatBytes(file.size);
     filePreview.classList.add("active");
     processBtn.disabled = false;
-
-    // Auto-select document type hint based on filename if helpful
-    const lowerName = file.name.toLowerCase();
-    if (lowerName.includes("cash flow") || lowerName.includes("cashflow")) {
-      docTypeSelect.value = "cash_flow_statement";
-    } else if (lowerName.includes("balance sheet") || lowerName.includes("balancesheet")) {
-      docTypeSelect.value = "balance_sheet";
-    } else if (lowerName.includes("profit") || lowerName.includes("pnl") || lowerName.includes("loss")) {
-      docTypeSelect.value = "profit_and_loss";
-    } else if (lowerName.includes("invoice") || lowerName.includes("receipt") || lowerName.includes("bill")) {
-      docTypeSelect.value = "invoice";
-    }
   }
 
 

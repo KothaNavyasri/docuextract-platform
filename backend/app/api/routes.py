@@ -22,7 +22,13 @@ from backend.app.schemas.document import (
 from backend.app.schemas.validation import DocumentValidationSummary, ValidationStatus
 from backend.app.services.file_validator import validate_and_inspect_file, compute_file_hash
 from backend.app.services.ocr_engine import extract_pages_as_images_and_text
-from backend.app.services.ai_extractor import extract_document_with_ai
+from backend.app.services.ai_extractor import (
+    extract_document_with_ai,
+    process_invoice_document,
+    process_cash_flow_document,
+    process_balance_sheet_document,
+    process_profit_and_loss_document
+)
 from backend.app.services.financial_validator import perform_financial_validation
 
 def utc_now():
@@ -109,20 +115,44 @@ async def process_document(
             detail=f"Failed to parse document pages or images: {str(e)}"
         )
 
-    # 3. AI Schema & Field Extraction
+    # 3. Document-Type Routing Handler (strictly driven by user selection)
     try:
-        extracted_data, ocr_engine_name, ai_model_name = await extract_document_with_ai(
-            images=images,
-            native_text_by_page=text_by_page,
-            doc_type=document_type,
-            filename=filename
-        )
+        if document_type == DocumentType.INVOICE:
+            extracted_data, ocr_engine_name, ai_model_name = await process_invoice_document(
+                images=images,
+                native_text_by_page=text_by_page,
+                filename=filename
+            )
+        elif document_type == DocumentType.CASH_FLOW_STATEMENT:
+            extracted_data, ocr_engine_name, ai_model_name = await process_cash_flow_document(
+                images=images,
+                native_text_by_page=text_by_page,
+                filename=filename
+            )
+        elif document_type == DocumentType.BALANCE_SHEET:
+            extracted_data, ocr_engine_name, ai_model_name = await process_balance_sheet_document(
+                images=images,
+                native_text_by_page=text_by_page,
+                filename=filename
+            )
+        elif document_type == DocumentType.PROFIT_AND_LOSS:
+            extracted_data, ocr_engine_name, ai_model_name = await process_profit_and_loss_document(
+                images=images,
+                native_text_by_page=text_by_page,
+                filename=filename
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported document type: {document_type}"
+            )
     except Exception as e:
-        logger.error(f"AI Extraction error on '{filename}': {e}")
+        logger.error(f"Extraction error on '{filename}' for document type '{document_type.value}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Document data extraction error: {str(e)}"
         )
+
 
     # 4. Financial Validation Engine
     try:

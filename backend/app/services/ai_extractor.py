@@ -271,6 +271,38 @@ def parse_extracted_json(json_str: str, doc_type: DocumentType) -> ExtractedData
         notes=data.get("notes", [])
     )
 
+async def process_invoice_document(
+    images: List[Image.Image],
+    native_text_by_page: Dict[int, str],
+    filename: str
+) -> Tuple[ExtractedData, str, str]:
+    """Process an Invoice or Receipt document."""
+    return await extract_document_with_ai(images, native_text_by_page, DocumentType.INVOICE, filename)
+
+async def process_cash_flow_document(
+    images: List[Image.Image],
+    native_text_by_page: Dict[int, str],
+    filename: str
+) -> Tuple[ExtractedData, str, str]:
+    """Process a Cash Flow Statement document."""
+    return await extract_document_with_ai(images, native_text_by_page, DocumentType.CASH_FLOW_STATEMENT, filename)
+
+async def process_balance_sheet_document(
+    images: List[Image.Image],
+    native_text_by_page: Dict[int, str],
+    filename: str
+) -> Tuple[ExtractedData, str, str]:
+    """Process a Balance Sheet document."""
+    return await extract_document_with_ai(images, native_text_by_page, DocumentType.BALANCE_SHEET, filename)
+
+async def process_profit_and_loss_document(
+    images: List[Image.Image],
+    native_text_by_page: Dict[int, str],
+    filename: str
+) -> Tuple[ExtractedData, str, str]:
+    """Process a Profit & Loss Statement document."""
+    return await extract_document_with_ai(images, native_text_by_page, DocumentType.PROFIT_AND_LOSS, filename)
+
 async def extract_document_with_ai(
     images: List[Image.Image],
     native_text_by_page: Dict[int, str],
@@ -317,6 +349,7 @@ async def extract_document_with_ai(
     extracted = parse_document_from_ocr_text(native_text_by_page, doc_type, filename)
     extracted.raw_text_by_page = {str(k): v for k, v in native_text_by_page.items()}
     return extracted, "RapidOCR ONNX Engine", "Deterministic Financial Parser v2.0"
+
 
 
 def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: DocumentType, filename: str) -> ExtractedData:
@@ -617,6 +650,16 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         cash_val, _, cash_src, _ = find_target_row_values([["cash", "paid"], ["amount", "paid"], ["cashpaid"], ["cash"]])
         chg_val, _, chg_src, _ = find_target_row_values([["change", "due"], ["balancedue"], ["changedue"], ["change"]])
 
+        # Filter line items for invoice to omit totals, headers, room numbers, etc.
+        filtered_items = []
+        for item in line_items:
+            lbl_low = (item.label or "").lower()
+            if any(w in lbl_low for w in ["total", "subtotal", "cash", "change", "room", "location", "cashier", "receipt", "tel", "fax", "thank", "goods", "dealing"]):
+                continue
+            if item.unit_price and item.unit_price > 100000 and (tot_val or 1000) < 5000:
+                continue
+            filtered_items.append(item)
+        line_items = filtered_items
 
         summary_fields["invoice_number"] = ExtractedField(value=inv_no, confidence=0.95, source_text=inv_no, page_number=1)
         summary_fields["total_amount"] = ExtractedField(value=tot_val, confidence=0.98, source_text=f"{tot_src}: {tot_val}", page_number=1, is_missing=tot_val is None)
@@ -624,6 +667,7 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         summary_fields["change_due"] = ExtractedField(value=chg_val, confidence=0.95, source_text=f"{chg_src}: {chg_val}", page_number=1, is_missing=chg_val is None)
         summary_fields["subtotal"] = ExtractedField(value=tot_val, confidence=0.95, source_text=f"Subtotal: {tot_val}", page_number=1, is_missing=tot_val is None)
         summary_fields["total_tax_amount"] = ExtractedField(value=0.0, confidence=0.90, source_text="Tax: 0.00", page_number=1, is_missing=False)
+
 
     return ExtractedData(
         statement_title=statement_title,
