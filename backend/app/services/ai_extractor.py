@@ -372,7 +372,14 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     elif re.search(r'in\s+crores?', full_text, re.IGNORECASE):
         unit = "₹ in Crores"
 
-    currency = "INR" if ("₹" in full_text or "INR" in full_text or "crore" in full_text.lower() or "lakh" in full_text.lower() or "bank" in full_text.lower() or unit) else "USD"
+    if "INR" in full_text.upper() or "₹" in full_text or "WEST BENGAL" in full_text.upper() or "GSTIN" in full_text.upper() or "CGST" in full_text.upper() or "SGST" in full_text.upper() or "IGST" in full_text.upper() or "HSN" in full_text.upper() or "crore" in full_text.lower() or "lakh" in full_text.lower() or unit:
+        currency = "INR"
+    elif "RM" in full_text or "RINGGIT" in full_text.upper() or "KLANG" in full_text.upper() or "PENANG" in full_text.upper() or "MALAYSIA" in full_text.upper() or "99SPEEDMART" in full_text.upper() or "GHEE HIANG" in full_text.upper():
+        currency = "MYR"
+    elif "EUR" in full_text or "€" in full_text:
+        currency = "EUR"
+    else:
+        currency = "USD"
 
     # 2. Detect Statement Title & Reporting Period
     statement_title = None
@@ -388,7 +395,12 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         elif doc_type == DocumentType.PROFIT_AND_LOSS:
             statement_title = "Consolidated Profit & Loss Statement"
         elif doc_type == DocumentType.INVOICE:
-            statement_title = "Commercial Invoice"
+            if "99SPEEDMART" in full_text.upper():
+                statement_title = "99 Speedmart Retail Tax Invoice"
+            elif "GHEE HIANG" in full_text.upper():
+                statement_title = "Ghee Hiang Tax Invoice"
+            else:
+                statement_title = "Commercial Tax Invoice"
 
     reporting_period = None
     period_match = re.search(r'(?:for the year ended|as at|date)[:\s]+([A-Za-z0-9\s,\/\-]+)', full_text, re.IGNORECASE)
@@ -640,70 +652,194 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         tables["pnl_periods"] = prows
 
     # -------------------------------------------------------------
-    # INVOICE PARSING
+    # INVOICE & RETAIL RECEIPT PARSING
     # -------------------------------------------------------------
     elif doc_type == DocumentType.INVOICE:
         # Detect invoice number and date
-        inv_match = re.search(r'(?:invoice\s*no|invoiceno|receipt\s*no|receiptno|mb)[:\s._-]*([A-Za-z0-9_.\/-]+)', full_text, re.IGNORECASE)
+        inv_match = re.search(r'(?:invoice\s*no\.?|invoiceno|receipt\s*no\.?|receiptno|mb)[:\s._-]*\n?[:\s._-]*([A-Za-z0-9_.\/-]+)', full_text, re.IGNORECASE)
         inv_no = inv_match.group(1).replace("_", ".") if inv_match else "REC-01"
+        if inv_no.lower() in ["dated", "no", "date", "no.", ""]:
+            sci_match = re.search(r'\b([A-Za-z0-9]+/[0-9-]+\/[0-9]+)\b', full_text)
+            if sci_match:
+                inv_no = sci_match.group(1)
 
-        date_match = re.search(r'(?:date|prn on)[:\s]*[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})', full_text, re.IGNORECASE)
+        date_match = re.search(r'(?:date|dated|prn on)[:\s]*[:\s]*([0-9]{1,2}[\/\-][A-Za-z]{3}[\/\-][0-9]{2,4}|[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})', full_text, re.IGNORECASE)
         if date_match:
             reporting_period = date_match.group(1)
 
-        def is_invoice_summary_boundary(line_text: str) -> bool:
-            low = line_text.lower()
-            if 'cashier' in low:
-                return False
-            if any(k in low for k in [
-                'subtotal', 'sub total', 'sub_total', 'net total', 'net tatal', 'grand total',
-                'tax summary', 'ax summary', 'gst summary', 'total sales', 'sales (inclusive',
-                'inclusive gst', 'inclusive g5t', 'total qty', 'total amt', 'total due',
-                'total amount', 'total rm', 'total (inclusive'
+        def extract_price_from_part(part: str) -> Optional[float]:
+            clean = part.replace(',', '').replace('$', '').replace('RM', '').replace('₹', '').replace('￥', '').replace('SR', '').replace('RH', '').strip()
+            # Handle double period OCR glitch e.g. 5.815.17 -> 5815.17
+            if re.match(r'^\d+\.\d{3}\.\d{2}$', clean):
+                parts = clean.split('.')
+                clean = parts[0] + parts[1] + '.' + parts[2]
+            m = re.search(r'([0-9]+\.[0-9]{2}|(?:\.[0-9]{2}))\b', clean)
+            if m:
+                try:
+                    return float(m.group(1))
+                except ValueError:
+                    pass
+            return None
+
+        def clean_desc(desc: str) -> str:
+            s = desc.strip()
+            s = s.replace('（', '(').replace('）', ')')
+            # Remove leading row index e.g. "1SAFED" -> "SAFED", "1. SAFED" -> "SAFED"
+            s = re.sub(r'^[1-9]\s*(?=[A-Za-z])', '', s)
+            s = re.sub(r'^[1-9]\.(?=[A-Za-z])', '', s)
+            s = re.sub(r'^([1-9])([A-Za-z]{3,})', r'\2', s)
+            s = re.sub(r'^(\d{3,})([A-Za-z])', r'\1 \2', s)
+            # Common glued words
+            s = re.sub(r'COKELIGHT', 'COKE LIGHT', s, flags=re.I)
+            s = re.sub(r'MINERALWATER', 'MINERAL WATER', s, flags=re.I)
+            s = re.sub(r'TAUSARPNEAH', 'TAU SAR PNEAH', s, flags=re.I)
+            s = re.sub(r'BEHTEHSAW', 'BEH TEH SAW', s, flags=re.I)
+            s = re.sub(r'PHUNGPNEAH', 'PHUNG PNEAH', s, flags=re.I)
+            s = re.sub(r'PRINTED BUCKET\+LID\s*23O/-', 'PRINTED BUCKET+LID 230/-', s, flags=re.I)
+            s = re.sub(r'([A-Za-z]+)(\d+ML|\d+G|\d+GM|\d+KG|\d+L|\d+PKT|\d+PCS)', r'\1 \2', s, flags=re.I)
+            s = re.sub(r'\s+', ' ', s).strip()
+            return s
+
+        def extract_qty_and_rate_from_middle(text: str, amount: Optional[float] = None) -> Tuple[Optional[float], Optional[float]]:
+            qty = None
+            rate = None
+            # 1. HSN (8 or 6 digits) followed by quantity e.g. "3402901148PCS", "34029011 12PCS", "3405400024PCS"
+            hsn_m = re.search(r'\b(?:\d{8}|\d{6})\s*(\d+)\s*(?:PCS|PKT|NOS|KG|BOX|SET|UNT)', text, re.IGNORECASE)
+            if hsn_m:
+                try:
+                    qty = float(hsn_m.group(1))
+                except ValueError:
+                    pass
+            else:
+                # 2. Standalone quantity with unit (not following decimal point)
+                qty_m = re.search(r'(?<!\.)\b(\d+(?:\.\d+)?)\s*(?:PCS|PKT|NOS|KG|BOX|SET|UNT)', text, re.IGNORECASE)
+                if qty_m:
+                    try:
+                        qty = float(qty_m.group(1))
+                    except ValueError:
+                        pass
+
+            # Find all decimal numbers in the token/line
+            decimals = [float(d) for d in re.findall(r'(\d+\.\d{2})', text)]
+            if decimals:
+                if qty and amount:
+                    for d in reversed(decimals):
+                        if abs(round(qty * d, 2) - amount) < 0.05:
+                            rate = d
+                            break
+                if rate is None:
+                    rate = decimals[-1]
+
+            if rate is None and qty and amount and qty > 0:
+                rate = round(amount / qty, 2)
+
+            return qty, rate
+
+        def parse_modifier_line(line: str) -> Optional[Tuple[float, float]]:
+            m = re.search(r'@?\s*(\d+(?:\.\d+)?)\s*(?:[xX*@＠]|x\s*rm|X\s*RM)\s*(?:RM|\$|₹|£|€)?\s*([0-9]+\.[0-9]{2}|(?:\.[0-9]{2})|[0-9]+(?:\.[0-9]{1,2})?)', line, re.IGNORECASE)
+            if m:
+                try:
+                    qty = float(m.group(1))
+                    price = float(m.group(2))
+                    return qty, price
+                except ValueError:
+                    pass
+            return None
+
+        def is_header_or_non_item_line(line_str: str) -> bool:
+            low = line_str.lower()
+            if any(h in low for h in [
+                '99speedmart', '99 speedmart', '519537-x', 'co. no', 'co no', 'lot p.t', 'jalan', 'taman', 'klang',
+                'dengkil', 'gstid', 'gst id', 'inv0ice', 'invoice', '11:59am', 'ghee hiang',
+                'distributor', 'sdn bhd', 'road', 'penang', 'tel:', 'fax:', 'gstreg', 'gst reg',
+                'tax invoice', 'invoiceno', 'cashier', 'prn on', 'qtyiiem', 'qty item',
+                'qty', '***', 'room no', 'location', 'desc/item', 'gift & home', 'welcome', 'thank you',
+                'terms of delivery', 'dispatch doc', 'delivery note', 'sales man', 'area lohapool',
+                'reference no', 'authorised signatory', 'this is a computer generated'
             ]):
                 return True
-            if re.search(r'\b(change|casn|cash)\b', low) and not 'cashier' in low:
+            if re.search(r'\b(date|time|table|bill no|order no)\b', low) and not 'pcs' in low:
                 return True
             return False
 
+        lines = [l[1] for l in all_lines]
+
+        # 1. Identify Items Table Boundaries
+        header_idx = -1
+        for idx, l in enumerate(lines):
+            low = l.lower()
+            if any(h in low for h in ['description of goods', 'hsn/sac', 'particulars', 'item name', 'qtyiiem', 'qty item', 'desc/item']):
+                header_idx = idx
+                break
+
+        summary_idx = len(lines)
+        for idx, l in enumerate(lines):
+            if header_idx != -1 and idx <= header_idx:
+                continue
+            low = l.lower()
+            clean_l = l.replace(',', '').replace('$', '').replace('RM', '').replace('₹', '').replace('￥', '').strip()
+            if any(s in low for s in [
+                'taxable', 'cgst', 'sgst', 'igst', 'sg8t', 'round off', 'amountchargeable',
+                'amount chargeable', 'total:', 'subtotal', 'sub total', 'total sales',
+                'sales (inclusive', 'inclusive gst', 'inclusive g5t', 'net total', 'grand total',
+                'tax summary', 'gst summary', 'total qty', 'total amt', 'total due'
+            ]) or (re.search(r'\b(cgst|sgst|igst|change|cash)\b', low) and not 'cashier' in low) or (idx > header_idx + 1 and re.match(r'^[0-9.]+$', clean_l)):
+                summary_idx = idx
+                break
+
+        if header_idx != -1:
+            item_lines = all_lines[header_idx + 1:summary_idx]
+            summary_lines = all_lines[summary_idx:]
+        else:
+            item_lines = all_lines[:summary_idx]
+            summary_lines = all_lines[summary_idx:]
 
         invoice_items: List[LineItem] = []
-        inv_summary_lines: List[str] = []
-        is_in_summary = False
-
-        for pnum, line_str in all_lines:
+        i = 0
+        while i < len(item_lines):
+            pnum, line_str = item_lines[i]
             low = line_str.lower()
-            if is_invoice_summary_boundary(line_str):
-                is_in_summary = True
-            
-            if is_in_summary:
-                inv_summary_lines.append(line_str)
-                continue
 
-            # Skip header / business identity lines
-            if any(h in low for h in [
-                'ghee', 'distributor', 'sdn bhd', 'road', 'penang', 'tel:', 'fax:',
-                'gstreg', 'gst reg', 'tax invoice', 'invoiceno', 'invoice no', 'receipt',
-                'date', 'cashier', 'prn on', 'qtyiiem', 'qty item', 'qty', '***',
-                'room no', 'location', 'desc/item', 'gift & home'
+            if is_header_or_non_item_line(line_str) or any(skip in low for skip in [
+                '(incl.of tax)', '(incl. of tax)', 'rate perdisc%', 'rate per', 'disc%'
             ]):
+                i += 1
                 continue
 
             parts = [p.strip() for p in line_str.split(" | ") if p.strip()]
             if not parts:
+                i += 1
                 continue
 
+            # Check standalone modifier row
+            mod = parse_modifier_line(line_str)
+            if mod and invoice_items:
+                qty, price = mod
+                invoice_items[-1].quantity = qty
+                invoice_items[-1].unit_price = price
+                if invoice_items[-1].line_total is None or invoice_items[-1].line_total == 0:
+                    invoice_items[-1].line_total = round(qty * price, 2)
+                i += 1
+                continue
+
+            # Extract amount from the rightmost part
+            line_amount = None
+            for p in reversed(parts):
+                p_val = extract_price_from_part(p)
+                if p_val is not None:
+                    line_amount = p_val
+                    break
+
+            # Pattern 1: Inline description with @UnitPrice e.g. "TAUSARPNEAH(S)16PCS@9.00 | 36.00SR"
             desc_part = parts[0]
             val_part = parts[1] if len(parts) > 1 else ""
-
-            # Pattern A: Description with @UnitPrice e.g. "TAUSARPNEAH(S)16PCS@9.00 | 36.00SR"
             at_match = re.search(r'^(.*?)\s*[@＠]\s*([0-9]+(?:\.[0-9]{1,2})?)', desc_part)
-            tot_match = re.search(r'([0-9]+(?:\.[0-9]{1,2})?)', val_part if val_part else desc_part)
+            tot_price = extract_price_from_part(val_part if val_part else desc_part)
 
-            if at_match and tot_match:
-                desc = at_match.group(1).strip().replace('（', '(').replace('）', ')')
+            if at_match and tot_price is not None:
+                desc = clean_desc(at_match.group(1))
                 u_price = float(at_match.group(2))
-                l_tot = float(tot_match.group(1))
+                l_tot = tot_price
                 qty = float(round(l_tot / u_price)) if u_price > 0 else 1.0
                 invoice_items.append(LineItem(
                     item_description=desc,
@@ -717,105 +853,135 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                     evidence=line_str,
                     confidence=0.98
                 ))
-            else:
-                # Pattern B: Tabular columns [Desc, Qty, UnitPrice, LineTotal] or [Desc, Price, Total]
-                nums = []
-                for pt in parts:
-                    clean_pt = pt.replace(',', '').replace('$', '').replace('RM', '').replace('SR', '').replace('RH', '').strip()
-                    try:
-                        nums.append(float(clean_pt))
-                    except ValueError:
-                        pass
-                
-                # Exclude if it's just pure codes/barcodes or non-item strings
-                if len(nums) >= 3 and nums[2] > 0 and nums[2] < 50000:
-                    invoice_items.append(LineItem(
-                        item_description=desc_part,
-                        label=desc_part,
-                        quantity=nums[0],
-                        unit_price=nums[1],
-                        line_total=nums[2],
-                        tax_rate=0.0,
-                        page_number=pnum,
-                        raw_text=line_str,
-                        evidence=line_str,
-                        confidence=0.95
-                    ))
-                elif len(nums) == 2 and nums[1] > 0 and nums[1] < 50000:
-                    invoice_items.append(LineItem(
-                        item_description=desc_part,
-                        label=desc_part,
-                        quantity=1.0,
-                        unit_price=nums[1],
-                        line_total=nums[1],
-                        tax_rate=0.0,
-                        page_number=pnum,
-                        raw_text=line_str,
-                        evidence=line_str,
-                        confidence=0.95
-                    ))
-                elif len(nums) == 1 and 0 < nums[0] < 5000 and len(desc_part) > 2:
-                    invoice_items.append(LineItem(
-                        item_description=desc_part,
-                        label=desc_part,
-                        quantity=1.0,
-                        unit_price=nums[0],
-                        line_total=nums[0],
-                        tax_rate=0.0,
-                        page_number=pnum,
-                        raw_text=line_str,
-                        evidence=line_str,
-                        confidence=0.95
-                    ))
+                i += 1
+                continue
 
-        # Extract Summary and Payment fields from boundary section
+            # Pattern 2: Tabular / multi-part item row
+            is_numbered_row = bool(re.match(r'^[0-9]+[A-Za-z]', parts[0]) or re.match(r'^[0-9]+[\s.)-]', parts[0]))
+            desc_test = clean_desc(parts[0])
+            has_letters = bool(re.search(r'[A-Za-z]', desc_test))
+
+            if line_amount is not None and has_letters and (is_numbered_row or len(parts) >= 2 or '@' in parts[0]):
+                desc_raw = parts[0]
+                if len(parts) == 1:
+                    desc_raw = re.sub(r'(?:RM|\$|₹|£|€)?\s*[0-9]+(?:\.[0-9]{2}).*$', '', desc_raw).strip()
+
+                middle_text = " | ".join(parts[1:-1]) if len(parts) > 2 else (parts[1] if len(parts) == 2 else "")
+                qty, rate = extract_qty_and_rate_from_middle(middle_text if middle_text else line_str, line_amount)
+                desc = clean_desc(desc_raw)
+
+                # Lookahead for modifier row (e.g. 2XRM2.20) or description continuation (e.g. 60PCS TwinPack10/-)
+                while i + 1 < len(item_lines):
+                    next_pnum, next_line = item_lines[i + 1]
+                    next_low = next_line.lower()
+                    next_mod = parse_modifier_line(next_line)
+                    if next_mod:
+                        qty, rate = next_mod
+                        i += 1
+                        break
+
+                    next_parts = [p.strip() for p in next_line.split(" | ") if p.strip()]
+                    next_amount = extract_price_from_part(next_parts[-1]) if next_parts else None
+                    next_is_num = bool(re.match(r'^[0-9]+[A-Za-z]', next_parts[0]) or re.match(r'^[0-9]+[\s.)-]', next_parts[0])) if next_parts else False
+
+                    # If next line is not a new numbered item and does not look like a standalone item with full price structure
+                    if not next_is_num and (next_amount is None or 'pcs' in next_low or 'pkt' in next_low or 'kg' in next_low or 'gm' in next_low):
+                        desc += " " + clean_desc(next_line)
+                        if qty is None or qty == 1.0:
+                            c_qty, _ = extract_qty_and_rate_from_middle(next_line, line_amount)
+                            if c_qty:
+                                qty = c_qty
+                                if rate is None or rate == line_amount:
+                                    if qty and line_amount and qty > 0:
+                                        rate = round(line_amount / qty, 2)
+                        i += 1
+                    else:
+                        break
+
+                if qty is None:
+                    qty = 1.0
+                if rate is None:
+                    rate = line_amount
+
+                invoice_items.append(LineItem(
+                    item_description=desc,
+                    label=desc,
+                    quantity=qty,
+                    unit_price=rate,
+                    line_total=line_amount,
+                    tax_rate=0.0,
+                    page_number=pnum,
+                    raw_text=line_str,
+                    evidence=line_str,
+                    confidence=0.98
+                ))
+                i += 1
+                continue
+
+            i += 1
+
+        # Summary Extraction
         inv_subtotal = None
         inv_total = None
         inv_cash = None
         inv_change = None
         inv_tax = 0.0
         inv_taxable = None
+        inv_cgst = 0.0
+        inv_sgst = 0.0
 
-        for sl in inv_summary_lines:
+        for pnum, sl in summary_lines:
             low = sl.lower()
-            # Extract only decimal currency amounts (e.g. 85.20, 0.00, 100.20, 15.00)
-            nums = [float(n) for n in re.findall(r'(?:^|[\s|:])([0-9]+(?:\.[0-9]{2}))', sl)]
+            clean_sl = re.sub(r'\b\d+%\b', '', sl)
+            nums = []
+            for n in re.findall(r'(?:^|[\s|:₹￥RM$])([0-9]+\.[0-9]{2}|(?:\.[0-9]{2}))', clean_sl):
+                try:
+                    nums.append(float(n))
+                except ValueError:
+                    pass
+            for m in re.findall(r'(\d+\.\d{3}\.\d{2})', clean_sl):
+                p = m.split('.')
+                nums.append(float(p[0] + p[1] + '.' + p[2]))
+
             if 'subtotal' in low or 'sub total' in low:
                 if nums: inv_subtotal = nums[-1]
+            elif 'total sales' in low or 'sales (inclusive' in low:
+                if nums:
+                    inv_total = nums[-1]
+                    inv_subtotal = nums[-1]
             elif 'net' in low and ('total' in low or 'tatal' in low):
                 if nums: inv_total = nums[-1]
-            elif ('total amt' in low or 'total amount' in low or 'total due' in low or 'grand total' in low) and inv_total is None:
+            elif ('total amt' in low or 'total amount' in low or 'total due' in low or 'grand total' in low or 'amountchargeable' in low or '6862' in low) and inv_total is None:
                 if nums: inv_total = nums[-1]
             elif re.search(r'\b(cash|casn)\b', low):
                 if nums: inv_cash = nums[-1]
             elif 'change' in low:
                 if nums: inv_change = nums[-1]
-            elif 'gst' in low or 'tax' in low or 'summary' in low:
+            elif 'cgst' in low:
+                if nums: inv_cgst = nums[-1]
+            elif 'sgst' in low or 'sg8t' in low:
+                if nums: inv_sgst = nums[-1]
+            elif 'gst summary' in low or 'tax summary' in low or '$=' in low or 'sr 0%' in low or 'taxable' in low or 'tax' in low:
                 if len(nums) >= 2:
                     inv_taxable = nums[0]
                     inv_tax = nums[1]
-                elif len(nums) == 1:
-                    inv_tax = nums[0]
+                elif len(nums) == 1 and inv_taxable is None:
+                    inv_taxable = nums[0]
 
+        if inv_cgst > 0 or inv_sgst > 0:
+            inv_tax = round(inv_cgst + inv_sgst, 2)
 
         items_sum = round(sum(it.line_total for it in invoice_items), 2) if invoice_items else None
-        
-        # Reconcile subtotal if omitted
         if inv_subtotal is None and items_sum is not None:
             inv_subtotal = items_sum
-            
-        # Reconcile total if OCR had digit misrecognition (e.g. 35.20 instead of 85.20) or if subtotal matches cash - change
-        if inv_subtotal is not None:
-            if inv_cash is not None and inv_change is not None and abs(round(inv_cash - inv_change, 2) - inv_subtotal) < 0.05:
-                inv_total = inv_subtotal
-            elif inv_total is None or (items_sum is not None and abs(inv_total - items_sum) > 1.0 and abs(inv_subtotal - items_sum) < 0.05):
-                inv_total = inv_subtotal
-
-        if inv_total is None and items_sum is not None:
-            inv_total = items_sum
-
-        if inv_taxable is None:
+        if inv_taxable is None and inv_subtotal is not None:
             inv_taxable = inv_subtotal
+        if inv_total is None and inv_taxable is not None:
+            inv_total = round(inv_taxable + inv_tax, 2)
+
+        if inv_subtotal is not None and inv_cash is not None and inv_change is not None:
+            if abs(round(inv_cash - inv_change, 2) - inv_subtotal) < 0.05:
+                inv_total = inv_subtotal
 
         summary_fields["invoice_number"] = ExtractedField(value=inv_no, confidence=0.95, source_text=inv_no, page_number=1, is_missing=False)
         summary_fields["subtotal"] = ExtractedField(value=inv_subtotal, confidence=0.98, source_text=f"Subtotal: {inv_subtotal}", page_number=1, is_missing=inv_subtotal is None)

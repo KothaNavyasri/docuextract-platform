@@ -1,7 +1,7 @@
 import io
 from typing import List, Tuple, Dict, Any
 import pymupdf
-from PIL import Image
+from PIL import Image, ImageOps
 from backend.app.core.logging import logger
 
 _ocr_engine = None
@@ -24,6 +24,14 @@ def run_ocr_on_image(img_bytes: bytes) -> str:
     if not engine:
         return ""
     try:
+        try:
+            pil_img = Image.open(io.BytesIO(img_bytes))
+            pil_img = ImageOps.exif_transpose(pil_img)
+            buf = io.BytesIO()
+            pil_img.save(buf, format="JPEG")
+            img_bytes = buf.getvalue()
+        except Exception:
+            pass
         results, elapse = engine(img_bytes)
         if not results:
             return ""
@@ -108,12 +116,17 @@ def extract_pages_as_images_and_text(content: bytes, filename: str) -> Tuple[Lis
     else:
         # JPG / PNG
         try:
-            img = Image.open(io.BytesIO(content)).convert("RGB")
-            images.append(img)
+            pil_img = Image.open(io.BytesIO(content))
+            pil_img = ImageOps.exif_transpose(pil_img).convert("RGB")
+            images.append(pil_img)
+            
+            buf = io.BytesIO()
+            pil_img.save(buf, format="JPEG")
+            transposed_bytes = buf.getvalue()
             
             # Run OCR on image
             logger.info(f"Running OCR on image document '{filename}'...")
-            ocr_text = run_ocr_on_image(content)
+            ocr_text = run_ocr_on_image(transposed_bytes)
             text_by_page[1] = ocr_text
             logger.info(f"Image document OCR complete: extracted {len(ocr_text.splitlines())} lines.")
         except Exception as e:

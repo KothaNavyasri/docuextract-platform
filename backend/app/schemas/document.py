@@ -14,9 +14,7 @@ class DocumentType(str, Enum):
     CASH_FLOW_STATEMENT = "cash_flow_statement"
 
 class ProcessingStatus(str, Enum):
-    SUCCESS = "SUCCESS"
-    VALIDATION_PASSED = "VALIDATION_PASSED"
-    VALIDATION_FAILED = "VALIDATION_FAILED"
+    PASS = "PASS"
     FAILED = "FAILED"
 
 class FileValidationResult(BaseModel):

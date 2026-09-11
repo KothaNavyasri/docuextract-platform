@@ -1,3 +1,4 @@
+import re
 import math
 from typing import List, Dict, Any, Optional
 from backend.app.schemas.document import DocumentType, ExtractedData
@@ -97,33 +98,45 @@ def validate_invoice(extracted: ExtractedData) -> List[ValidationCheck]:
     cash_paid = to_float(fields.get("cash_paid"))
     change_due = to_float(fields.get("change_due"))
     
-    # 1. Line items: Quantity * Unit Price ≈ Line Total
+    # 1. Line items: Quantity * Unit Price ≈ Line Total (with trade discounts accounted for)
     if extracted.line_items:
         for idx, item in enumerate(extracted.line_items):
             q = to_float(item.quantity)
             p = to_float(item.unit_price)
             t = to_float(item.line_total)
-            calc_t = (q * p) if (q is not None and p is not None) else None
+            calc_t = None
+            if q is not None and p is not None:
+                calc_t = round(q * p, 2)
+                raw = (item.raw_text or "") + " " + (item.item_description or "")
+                disc_m = re.search(r'(\d+(?:\.\d+)?)%', raw)
+                if disc_m:
+                    disc_pct = float(disc_m.group(1))
+                    disc_calc = round(q * p * (1.0 - disc_pct / 100.0), 2)
+                    if t is not None and abs(disc_calc - t) <= 0.05:
+                        calc_t = disc_calc
             
             checks.append(check_equality(
                 check_id=f"INV_LINE_ITEM_{idx+1}",
-                formula_name="Line Item Total Calculation",
-                formula_description=f"Quantity × Unit Price ≈ Line Total for Item {idx+1} ('{item.item_description or 'Item'}')",
+                formula_name=f"Line Item {idx+1} Total Calculation",
+                formula_description=f"Quantity ({q or 1:g}) × Unit Price ({p or 0:,.2f}) ≈ Line Total ({t or 0:,.2f}) for '{item.item_description or f'Item {idx+1}'}'",
                 calculated_value=calc_t,
                 reported_value=t,
-                operands={"quantity": q, "unit_price": p, "reported_line_total": t},
+                operands={"item_description": item.item_description, "quantity": q, "unit_price": p, "reported_line_total": t},
                 not_applicable_reason="Line item quantity, unit price, or total not available."
             ))
             
         # 2. Sum of line totals reconciles with subtotal / total
         line_totals = [to_float(item.line_total) for item in extracted.line_items if to_float(item.line_total) is not None]
         if line_totals and len(line_totals) == len(extracted.line_items):
-            sum_lines = sum(line_totals)
+            sum_lines = round(sum(line_totals), 2)
             target_reported = subtotal if subtotal is not None else total_amount
+            sum_formula = " + ".join(f"{lt:,.2f}" for lt in line_totals)
+            
+            is_match = target_reported is not None and abs(sum_lines - target_reported) <= 1.0
             checks.append(check_equality(
                 check_id="INV_SUM_LINE_ITEMS",
                 formula_name="Sum of Line Items Reconciliation",
-                formula_description="Sum of all item line totals ≈ Subtotal / Total Amount",
+                formula_description=f"Sum of Line Items: {sum_formula} = {sum_lines:,.2f} ≈ Total Amount ({target_reported or 0:,.2f})",
                 calculated_value=sum_lines,
                 reported_value=target_reported,
                 operands={"line_totals": line_totals, "sum_of_lines": sum_lines, "target_reported": target_reported},
@@ -142,11 +155,11 @@ def validate_invoice(extracted: ExtractedData) -> List[ValidationCheck]:
     # 3. Tax Reconciliation: Taxable Amount + Tax ≈ Total (or Subtotal + Tax ≈ Total)
     base_amount = taxable_amount if taxable_amount is not None else subtotal
     if base_amount is not None and total_tax is not None and total_amount is not None:
-        calc_total = base_amount + total_tax
+        calc_total = round(base_amount + total_tax, 2)
         checks.append(check_equality(
             check_id="INV_TAX_RECONCILIATION",
             formula_name="Taxable Amount & Tax to Total Reconciliation",
-            formula_description="Base / Taxable Amount + Total Tax Amount ≈ Total Amount",
+            formula_description=f"Taxable Amount ({base_amount:,.2f}) + Total Tax ({total_tax:,.2f}) = {calc_total:,.2f} ≈ Total Amount ({total_amount:,.2f})",
             calculated_value=calc_total,
             reported_value=total_amount,
             operands={"base_taxable_amount": base_amount, "total_tax": total_tax, "total_amount": total_amount}
@@ -164,11 +177,11 @@ def validate_invoice(extracted: ExtractedData) -> List[ValidationCheck]:
 
     # 4. Cash Paid - Total ≈ Change Due
     if cash_paid is not None and total_amount is not None and change_due is not None:
-        calc_change = cash_paid - total_amount
+        calc_change = round(cash_paid - total_amount, 2)
         checks.append(check_equality(
             check_id="INV_CASH_CHANGE_RECONCILIATION",
             formula_name="Cash Paid to Change Reconciliation",
-            formula_description="Cash Paid - Total Amount ≈ Change Due",
+            formula_description=f"Cash Paid ({cash_paid:,.2f}) - Total Amount ({total_amount:,.2f}) = {calc_change:,.2f} ≈ Change Due ({change_due:,.2f})",
             calculated_value=calc_change,
             reported_value=change_due,
             operands={"cash_paid": cash_paid, "total_amount": total_amount, "reported_change": change_due}

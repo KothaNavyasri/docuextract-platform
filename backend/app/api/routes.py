@@ -173,11 +173,9 @@ async def process_document(
     
     # 5. Determine Overall Processing Status
     if validation_summary.overall_status == ValidationStatus.PASS:
-        proc_status = ProcessingStatus.VALIDATION_PASSED
-    elif validation_summary.overall_status == ValidationStatus.FAIL:
-        proc_status = ProcessingStatus.VALIDATION_FAILED
+        proc_status = ProcessingStatus.PASS
     else:
-        proc_status = ProcessingStatus.SUCCESS
+        proc_status = ProcessingStatus.FAILED
 
     metadata = ProcessingMetadata(
         extracted_at=utc_now(),
@@ -224,7 +222,7 @@ async def list_documents(
             id=item.id,
             document_name=item.document_name,
             document_type=DocumentType(item.document_type),
-            processing_status=ProcessingStatus(item.processing_status) if item.processing_status in [s.value for s in ProcessingStatus] else ProcessingStatus.SUCCESS,
+            processing_status=ProcessingStatus(item.processing_status) if item.processing_status in [s.value for s in ProcessingStatus] else ProcessingStatus.PASS,
             created_at=item.created_at,
             page_count=item.page_count,
             validation_status=item.validation_status,
@@ -263,7 +261,7 @@ async def get_document(document_name: str, db: Session = Depends(get_db)):
         id=doc_record.id,
         document_name=doc_record.document_name,
         document_type=DocumentType(doc_record.document_type),
-        processing_status=ProcessingStatus(doc_record.processing_status) if doc_record.processing_status in [s.value for s in ProcessingStatus] else ProcessingStatus.SUCCESS,
+        processing_status=ProcessingStatus(doc_record.processing_status) if doc_record.processing_status in [s.value for s in ProcessingStatus] else ProcessingStatus.PASS,
         file_validation=FileValidationResult(**doc_record.file_validation_json),
         extracted_data=ExtractedData(**doc_record.extracted_data_json),
         validation=DocumentValidationSummary(**doc_record.validation_json),
