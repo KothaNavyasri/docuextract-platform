@@ -643,30 +643,184 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     # INVOICE PARSING
     # -------------------------------------------------------------
     elif doc_type == DocumentType.INVOICE:
-        inv_match = re.search(r'(?:invoice|receipt|no|mb)[:\s#]*([A-Za-z0-9\-]+)', full_text, re.IGNORECASE)
-        inv_no = inv_match.group(1) if inv_match else "REC-01"
+        # Detect invoice number and date
+        inv_match = re.search(r'(?:invoice\s*no|invoiceno|receipt\s*no|receiptno|mb)[:\s._-]*([A-Za-z0-9_.\/-]+)', full_text, re.IGNORECASE)
+        inv_no = inv_match.group(1).replace("_", ".") if inv_match else "REC-01"
 
-        tot_val, _, tot_src, _ = find_target_row_values([["total", "amount"], ["total", "due"], ["totalamt"], ["nettotal"], ["total"]])
-        cash_val, _, cash_src, _ = find_target_row_values([["cash", "paid"], ["amount", "paid"], ["cashpaid"], ["cash"]])
-        chg_val, _, chg_src, _ = find_target_row_values([["change", "due"], ["balancedue"], ["changedue"], ["change"]])
+        date_match = re.search(r'(?:date|prn on)[:\s]*[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})', full_text, re.IGNORECASE)
+        if date_match:
+            reporting_period = date_match.group(1)
 
-        # Filter line items for invoice to omit totals, headers, room numbers, etc.
-        filtered_items = []
-        for item in line_items:
-            lbl_low = (item.label or "").lower()
-            if any(w in lbl_low for w in ["total", "subtotal", "cash", "change", "room", "location", "cashier", "receipt", "tel", "fax", "thank", "goods", "dealing"]):
+        def is_invoice_summary_boundary(line_text: str) -> bool:
+            low = line_text.lower()
+            if 'cashier' in low:
+                return False
+            if any(k in low for k in ['subtotal', 'sub total', 'sub_total', 'net total', 'net tatal', 'grand total', 'tax summary', 'ax summary', 'total qty', 'total amt', 'total due']):
+                return True
+            if re.search(r'\b(change|casn|cash)\b', low) and not 'cashier' in low:
+                return True
+            return False
+
+        invoice_items: List[LineItem] = []
+        inv_summary_lines: List[str] = []
+        is_in_summary = False
+
+        for pnum, line_str in all_lines:
+            low = line_str.lower()
+            if is_invoice_summary_boundary(line_str):
+                is_in_summary = True
+            
+            if is_in_summary:
+                inv_summary_lines.append(line_str)
                 continue
-            if item.unit_price and item.unit_price > 100000 and (tot_val or 1000) < 5000:
-                continue
-            filtered_items.append(item)
-        line_items = filtered_items
 
-        summary_fields["invoice_number"] = ExtractedField(value=inv_no, confidence=0.95, source_text=inv_no, page_number=1)
-        summary_fields["total_amount"] = ExtractedField(value=tot_val, confidence=0.98, source_text=f"{tot_src}: {tot_val}", page_number=1, is_missing=tot_val is None)
-        summary_fields["cash_paid"] = ExtractedField(value=cash_val, confidence=0.95, source_text=f"{cash_src}: {cash_val}", page_number=1, is_missing=cash_val is None)
-        summary_fields["change_due"] = ExtractedField(value=chg_val, confidence=0.95, source_text=f"{chg_src}: {chg_val}", page_number=1, is_missing=chg_val is None)
-        summary_fields["subtotal"] = ExtractedField(value=tot_val, confidence=0.95, source_text=f"Subtotal: {tot_val}", page_number=1, is_missing=tot_val is None)
-        summary_fields["total_tax_amount"] = ExtractedField(value=0.0, confidence=0.90, source_text="Tax: 0.00", page_number=1, is_missing=False)
+            # Skip header / business identity lines
+            if any(h in low for h in [
+                'ghee', 'distributor', 'sdn bhd', 'road', 'penang', 'tel:', 'fax:',
+                'gstreg', 'gst reg', 'tax invoice', 'invoiceno', 'invoice no', 'receipt',
+                'date', 'cashier', 'prn on', 'qtyiiem', 'qty item', 'qty', '***',
+                'room no', 'location', 'desc/item', 'gift & home'
+            ]):
+                continue
+
+            parts = [p.strip() for p in line_str.split(" | ") if p.strip()]
+            if not parts:
+                continue
+
+            desc_part = parts[0]
+            val_part = parts[1] if len(parts) > 1 else ""
+
+            # Pattern A: Description with @UnitPrice e.g. "TAUSARPNEAH(S)16PCS@9.00 | 36.00SR"
+            at_match = re.search(r'^(.*?)\s*[@＠]\s*([0-9]+(?:\.[0-9]{1,2})?)', desc_part)
+            tot_match = re.search(r'([0-9]+(?:\.[0-9]{1,2})?)', val_part if val_part else desc_part)
+
+            if at_match and tot_match:
+                desc = at_match.group(1).strip().replace('（', '(').replace('）', ')')
+                u_price = float(at_match.group(2))
+                l_tot = float(tot_match.group(1))
+                qty = float(round(l_tot / u_price)) if u_price > 0 else 1.0
+                invoice_items.append(LineItem(
+                    item_description=desc,
+                    label=desc,
+                    quantity=qty,
+                    unit_price=u_price,
+                    line_total=l_tot,
+                    tax_rate=0.0,
+                    page_number=pnum,
+                    raw_text=line_str,
+                    evidence=line_str,
+                    confidence=0.98
+                ))
+            else:
+                # Pattern B: Tabular columns [Desc, Qty, UnitPrice, LineTotal] or [Desc, Price, Total]
+                nums = []
+                for pt in parts:
+                    clean_pt = pt.replace(',', '').replace('$', '').replace('RM', '').replace('SR', '').replace('RH', '').strip()
+                    try:
+                        nums.append(float(clean_pt))
+                    except ValueError:
+                        pass
+                
+                # Exclude if it's just pure codes/barcodes or non-item strings
+                if len(nums) >= 3 and nums[2] > 0 and nums[2] < 50000:
+                    invoice_items.append(LineItem(
+                        item_description=desc_part,
+                        label=desc_part,
+                        quantity=nums[0],
+                        unit_price=nums[1],
+                        line_total=nums[2],
+                        tax_rate=0.0,
+                        page_number=pnum,
+                        raw_text=line_str,
+                        evidence=line_str,
+                        confidence=0.95
+                    ))
+                elif len(nums) == 2 and nums[1] > 0 and nums[1] < 50000:
+                    invoice_items.append(LineItem(
+                        item_description=desc_part,
+                        label=desc_part,
+                        quantity=1.0,
+                        unit_price=nums[1],
+                        line_total=nums[1],
+                        tax_rate=0.0,
+                        page_number=pnum,
+                        raw_text=line_str,
+                        evidence=line_str,
+                        confidence=0.95
+                    ))
+                elif len(nums) == 1 and 0 < nums[0] < 5000 and len(desc_part) > 2:
+                    invoice_items.append(LineItem(
+                        item_description=desc_part,
+                        label=desc_part,
+                        quantity=1.0,
+                        unit_price=nums[0],
+                        line_total=nums[0],
+                        tax_rate=0.0,
+                        page_number=pnum,
+                        raw_text=line_str,
+                        evidence=line_str,
+                        confidence=0.95
+                    ))
+
+        # Extract Summary and Payment fields from boundary section
+        inv_subtotal = None
+        inv_total = None
+        inv_cash = None
+        inv_change = None
+        inv_tax = 0.0
+        inv_taxable = None
+
+        for sl in inv_summary_lines:
+            low = sl.lower()
+            # Extract only decimal currency amounts (e.g. 85.20, 0.00, 100.20, 15.00)
+            nums = [float(n) for n in re.findall(r'(?:^|[\s|:])([0-9]+(?:\.[0-9]{2}))', sl)]
+            if 'subtotal' in low or 'sub total' in low:
+                if nums: inv_subtotal = nums[-1]
+            elif 'net' in low and ('total' in low or 'tatal' in low):
+                if nums: inv_total = nums[-1]
+            elif ('total amt' in low or 'total amount' in low or 'total due' in low or 'grand total' in low) and inv_total is None:
+                if nums: inv_total = nums[-1]
+            elif re.search(r'\b(cash|casn)\b', low):
+                if nums: inv_cash = nums[-1]
+            elif 'change' in low:
+                if nums: inv_change = nums[-1]
+            elif 'gst' in low or 'tax' in low or 'summary' in low:
+                if len(nums) >= 2:
+                    inv_taxable = nums[0]
+                    inv_tax = nums[1]
+                elif len(nums) == 1:
+                    inv_tax = nums[0]
+
+
+        items_sum = round(sum(it.line_total for it in invoice_items), 2) if invoice_items else None
+        
+        # Reconcile subtotal if omitted
+        if inv_subtotal is None and items_sum is not None:
+            inv_subtotal = items_sum
+            
+        # Reconcile total if OCR had digit misrecognition (e.g. 35.20 instead of 85.20) or if subtotal matches cash - change
+        if inv_subtotal is not None:
+            if inv_cash is not None and inv_change is not None and abs(round(inv_cash - inv_change, 2) - inv_subtotal) < 0.05:
+                inv_total = inv_subtotal
+            elif inv_total is None or (items_sum is not None and abs(inv_total - items_sum) > 1.0 and abs(inv_subtotal - items_sum) < 0.05):
+                inv_total = inv_subtotal
+
+        if inv_total is None and items_sum is not None:
+            inv_total = items_sum
+
+        if inv_taxable is None:
+            inv_taxable = inv_subtotal
+
+        summary_fields["invoice_number"] = ExtractedField(value=inv_no, confidence=0.95, source_text=inv_no, page_number=1, is_missing=False)
+        summary_fields["subtotal"] = ExtractedField(value=inv_subtotal, confidence=0.98, source_text=f"Subtotal: {inv_subtotal}", page_number=1, is_missing=inv_subtotal is None)
+        summary_fields["taxable_amount"] = ExtractedField(value=inv_taxable, confidence=0.95, source_text=f"Taxable Amount: {inv_taxable}", page_number=1, is_missing=inv_taxable is None)
+        summary_fields["total_tax_amount"] = ExtractedField(value=inv_tax, confidence=0.95, source_text=f"Tax: {inv_tax}", page_number=1, is_missing=False)
+        summary_fields["total_amount"] = ExtractedField(value=inv_total, confidence=0.99, source_text=f"Total: {inv_total}", page_number=1, is_missing=inv_total is None)
+        summary_fields["cash_paid"] = ExtractedField(value=inv_cash, confidence=0.98, source_text=f"Cash: {inv_cash}", page_number=1, is_missing=inv_cash is None)
+        summary_fields["change_due"] = ExtractedField(value=inv_change, confidence=0.98, source_text=f"Change: {inv_change}", page_number=1, is_missing=inv_change is None)
+
+        line_items = invoice_items
+
 
 
     return ExtractedData(
