@@ -1,0 +1,138 @@
+{
+  "document_name": "Consolidated Cash Flow Statement 2026.pdf",
+  "document_type": "cash_flow_statement",
+  "processing_status": "VALIDATION_PASSED",
+  "file_validation": {
+    "is_valid": true,
+    "filename": "Consolidated Cash Flow Statement 2026.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 239938,
+    "page_count": 2,
+    "is_scanned": true,
+    "errors": []
+  },
+  "extracted_data": {
+    "summary_fields": {
+      "operating_cash_flow": {
+        "value": 412500.0,
+        "confidence": 0.98,
+        "source_text": "Net Cash flow from Operating Activities: 412,500",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "investing_cash_flow": {
+        "value": -185000.0,
+        "confidence": 0.98,
+        "source_text": "Net Cash used in Investing Activities: (185,000)",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "financing_cash_flow": {
+        "value": -95000.0,
+        "confidence": 0.98,
+        "source_text": "Net Cash used in Financing Activities: (95,000)",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "foreign_exchange_adjustment": {
+        "value": 0.0,
+        "confidence": 0.90,
+        "source_text": "Effect of exchange rate fluctuations: -",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "net_increase_in_cash": {
+        "value": 132500.0,
+        "confidence": 0.99,
+        "source_text": "Net Increase / (Decrease) in Cash: 132,500",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "opening_cash_balance": {
+        "value": 650000.0,
+        "confidence": 0.98,
+        "source_text": "Cash and Cash Equivalents at Beginning of the year: 650,000",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "closing_cash_balance": {
+        "value": 782500.0,
+        "confidence": 0.99,
+        "source_text": "Cash and Cash Equivalents at End of the year: 782,500",
+        "page_number": 2,
+        "is_missing": false
+      }
+    },
+    "tables": {
+      "cash_flow_periods": [
+        {
+          "period": "2026",
+          "operating_cash_flow": 412500.0,
+          "investing_cash_flow": -185000.0,
+          "financing_cash_flow": -95000.0,
+          "foreign_exchange_adjustment": 0.0,
+          "net_increase_in_cash": 132500.0,
+          "opening_cash_balance": 650000.0,
+          "closing_cash_balance": 782500.0
+        }
+      ]
+    },
+    "periods_detected": ["2026"],
+    "currency": "INR",
+    "notes": []
+  },
+  "validation": {
+    "overall_status": "PASS",
+    "passed_count": 2,
+    "failed_count": 0,
+    "not_applicable_count": 0,
+    "total_checks": 2,
+    "checks": [
+      {
+        "check_id": "CF_NET_INCREASE_2026",
+        "formula_name": "Net Increase in Cash Reconciliation (2026)",
+        "formula_description": "Operating + Investing + Financing Cash Flow + FX ≈ Net Increase in Cash for 2026",
+        "operands": {
+          "period": "2026",
+          "operating_cash_flow": 412500.0,
+          "investing_cash_flow": -185000.0,
+          "financing_cash_flow": -95000.0,
+          "fx_adjustment": 0.0,
+          "reported_net_increase": 132500.0
+        },
+        "calculated_value": 132500.0,
+        "reported_value": 132500.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 132,500.00 matches reported value 132,500.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "CF_CLOSING_CASH_2026",
+        "formula_name": "Closing Cash Balance Reconciliation (2026)",
+        "formula_description": "Opening Cash + Net Increase in Cash + Adjustments ≈ Closing Cash for 2026",
+        "operands": {
+          "period": "2026",
+          "opening_cash": 650000.0,
+          "net_increase": 132500.0,
+          "adjustments": 0.0,
+          "reported_closing_cash": 782500.0
+        },
+        "calculated_value": 782500.0,
+        "reported_value": 782500.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 782,500.00 matches reported value 782,500.00 (Variance: 0.0000 <= 0.05)."
+      }
+    ]
+  },
+  "processing_metadata": {
+    "extracted_at": "2026-09-11T14:33:00Z",
+    "processing_duration_ms": 450.0,
+    "ocr_engine": "Gemini Vision OCR + PyMuPDF",
+    "ai_model": "gemini-2.5-flash",
+    "pages_processed": 2,
+    "file_hash": "e1903bc78921da890123cb1e5a7b1b369c762d0"
+  }
+}

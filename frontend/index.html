@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligent Document Extraction & Financial Validation Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon">⚡</div>
+      <span>DocuExtract <span style="font-weight: 400; color: var(--accent-cyan);">AI</span></span>
+    </a>
+    
+    <div class="nav-status">
+      <div id="backend-health-badge" class="status-indicator">
+        <span class="status-dot"></span>
+        <span id="backend-status-text">Connecting to Backend...</span>
+      </div>
+      
+      <button id="open-settings-btn" class="api-settings-btn" title="Configure Backend URL">
+        ⚙️ <span id="current-api-label">API Settings</span>
+      </button>
+
+      <a id="swagger-nav-link" href="#" target="_blank" class="api-settings-btn" style="text-decoration: none; color: #fff; background: rgba(99, 102, 241, 0.15); border-color: var(--border-active);">
+        📖 Swagger Docs
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    
+    <!-- Metric Highlights Row -->
+    <section class="stats-row">
+      <div class="stat-box">
+        <span class="stat-label">Total Processed</span>
+        <span id="stat-total-docs" class="stat-value">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Validation Passed</span>
+        <span id="stat-passed-docs" class="stat-value pass">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Validation Failed</span>
+        <span id="stat-failed-docs" class="stat-value fail">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Not Applicable / N/A</span>
+        <span id="stat-na-docs" class="stat-value na">0</span>
+      </div>
+    </section>
+
+    <!-- Main Workspace Layout -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Column: Upload & Processing Form -->
+      <div class="card">
+        <h2 class="card-title">📄 Document Ingestion</h2>
+        <p class="card-subtitle">Upload financial PDF (up to 3 pages) or PNG/JPG image</p>
+
+        <form id="upload-form">
+          <div class="form-group">
+            <label for="doc-type-select" class="form-label">Document Type</label>
+            <select id="doc-type-select" class="select-control" required>
+              <option value="invoice">🧾 Invoice / Receipt</option>
+              <option value="balance_sheet">📊 Balance Sheet</option>
+              <option value="profit_and_loss">📈 Profit & Loss Statement</option>
+              <option value="cash_flow_statement">💸 Cash Flow Statement</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Upload Document File</label>
+            <div id="dropzone" class="dropzone">
+              <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" />
+              <div class="dropzone-icon">📁</div>
+              <div class="dropzone-text">Drag & Drop file here or <span style="color: var(--accent-cyan); text-decoration: underline;">browse</span></div>
+              <div class="dropzone-hint">Supports PDF, JPG, PNG (Max 3 pages, 25MB)</div>
+            </div>
+
+            <!-- Selected File Preview Bar -->
+            <div id="file-preview" class="file-preview">
+              <div class="file-info">
+                <span class="file-icon">📑</span>
+                <div>
+                  <div id="preview-filename" class="file-name">invoice_sample.pdf</div>
+                  <div id="preview-filesize" class="file-size">142 KB</div>
+                </div>
+              </div>
+              <button type="button" id="remove-file-btn" class="file-remove" title="Remove file">✕</button>
+            </div>
+          </div>
+
+          <button type="submit" id="process-btn" class="btn-primary" disabled>
+            <span>⚡ Extract & Validate Document</span>
+          </button>
+        </form>
+
+        <!-- Progress Tracker -->
+        <div id="progress-card" class="progress-card">
+          <div class="progress-header">
+            <span id="progress-status-text">Validating file & running OCR...</span>
+            <span id="progress-percentage">45%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Results & Interactive Inspector -->
+      <div>
+        
+        <!-- Navigation Tabs -->
+        <nav class="tab-container">
+          <button id="tab-inspector-btn" class="tab-btn active">🔍 Document Inspector</button>
+          <button id="tab-history-btn" class="tab-btn">📋 Processed History (<span id="history-count">0</span>)</button>
+        </nav>
+
+        <!-- Tab 1: Active Document Inspector View -->
+        <div id="tab-inspector" class="tab-pane">
+          
+          <div id="empty-inspector-state" class="card empty-state">
+            <div class="empty-icon">📂</div>
+            <h3>No Document Selected</h3>
+            <p>Upload a new document on the left or select a previous document from the history tab to inspect results.</p>
+          </div>
+
+          <div id="active-document-view" style="display: none;">
+            
+            <!-- Result Header Banner -->
+            <div class="doc-header-banner">
+              <div>
+                <div id="view-doc-name" class="doc-meta-title">Invoice_2026.pdf</div>
+                <div class="doc-meta-sub">
+                  <span id="view-doc-type">Type: Invoice</span>
+                  <span>•</span>
+                  <span id="view-doc-pages">1 Page</span>
+                  <span>•</span>
+                  <span id="view-proc-time">Duration: 420ms</span>
+                  <span>•</span>
+                  <span id="view-ai-model">Model: Gemini Vision</span>
+                </div>
+              </div>
+              <div id="view-status-badge" class="pill pill-pass">VALIDATION PASSED</div>
+            </div>
+
+            <!-- Financial Validation Section -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+              <h3 class="card-title">🧮 Financial Reconciliation & Formula Validation</h3>
+              <p class="card-subtitle">Deterministic mathematical checks performed on extracted financial figures</p>
+              
+              <div id="validation-checks-container" class="validation-grid">
+                <!-- Dynamically populated validation cards -->
+              </div>
+            </div>
+
+            <!-- Extracted Key Fields Section -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+              <h3 class="card-title">🏷️ Extracted Key-Value Fields</h3>
+              <p class="card-subtitle">Values, confidence scores, and source evidence text</p>
+
+              <div id="extracted-fields-container" class="fields-grid">
+                <!-- Dynamically populated field cards -->
+              </div>
+            </div>
+
+            <!-- Tables / Line Items Section -->
+            <div id="tables-card" class="card" style="margin-bottom: 1.5rem; display: none;">
+              <h3 class="card-title">📊 Tabular Line Items & Periods</h3>
+              <p class="card-subtitle">Extracted line items, statements, or comparative financial periods</p>
+
+              <div id="tables-container">
+                <!-- Dynamically populated tables -->
+              </div>
+            </div>
+
+            <!-- Raw JSON Viewer -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                  <h3 class="card-title" style="margin-bottom: 0.2rem;">📦 Structured Response JSON</h3>
+                  <p class="card-subtitle" style="margin-bottom: 0;">Full standardized schema payload for API consumers</p>
+                </div>
+              </div>
+              <div class="json-container">
+                <button id="copy-json-btn" class="copy-json-btn">📋 Copy JSON</button>
+                <pre id="raw-json-viewer">{}</pre>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Tab 2: Processed History View -->
+        <div id="tab-history" class="tab-pane" style="display: none;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 class="card-title" style="margin-bottom: 0.2rem;">📚 Processing History</h3>
+                <p class="card-subtitle" style="margin-bottom: 0;">All persisted documents stored in the database</p>
+              </div>
+              <button id="refresh-history-btn" class="api-settings-btn">🔄 Refresh List</button>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Document Name</th>
+                    <th>Type</th>
+                    <th>Pages</th>
+                    <th>Processed At</th>
+                    <th>Validation</th>
+                    <th>Checks Passed</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">No documents processed yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- API Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 1.15rem;">⚙️ Backend API Configuration</h3>
+        <button id="close-settings-btn" class="modal-close">✕</button>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label class="form-label">Backend API Base URL</label>
+        <input type="text" id="api-url-input" class="input-control" placeholder="http://127.0.0.1:8000/api/v1" />
+        <div class="helper-text">Point this to your deployed Render or Railway backend URL in production.</div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+        <button type="button" id="reset-api-url-btn" class="api-settings-btn">Reset to Default</button>
+        <button type="button" id="save-api-url-btn" class="btn-primary" style="margin-top: 0; width: auto; padding: 0.6rem 1.25rem;">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

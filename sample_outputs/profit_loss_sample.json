@@ -1,0 +1,194 @@
+{
+  "document_name": "Consolidated Profit & Loss 2026.pdf",
+  "document_type": "profit_and_loss",
+  "processing_status": "VALIDATION_PASSED",
+  "file_validation": {
+    "is_valid": true,
+    "filename": "Consolidated Profit & Loss 2026.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 156956,
+    "page_count": 1,
+    "is_scanned": true,
+    "errors": []
+  },
+  "extracted_data": {
+    "summary_fields": {
+      "interest_earned": {
+        "value": 1845200.0,
+        "confidence": 0.98,
+        "source_text": "I. Interest Earned: 1,845,200",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "other_income": {
+        "value": 312500.0,
+        "confidence": 0.98,
+        "source_text": "II. Other Income: 312,500",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "total_income": {
+        "value": 2157700.0,
+        "confidence": 0.99,
+        "source_text": "TOTAL INCOME: 2,157,700",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "interest_expended": {
+        "value": 980100.0,
+        "confidence": 0.98,
+        "source_text": "III. Interest Expended: 980,100",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "operating_expenses": {
+        "value": 462300.0,
+        "confidence": 0.98,
+        "source_text": "IV. Operating Expenses: 462,300",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "provisions_and_contingencies": {
+        "value": 175000.0,
+        "confidence": 0.98,
+        "source_text": "V. Provisions and Contingencies: 175,000",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "total_expenditure": {
+        "value": 1617400.0,
+        "confidence": 0.99,
+        "source_text": "TOTAL EXPENDITURE: 1,617,400",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "net_profit_before_minority_interest": {
+        "value": 540300.0,
+        "confidence": 0.99,
+        "source_text": "Net Profit for the year before Minority Interest: 540,300",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "minority_interest": {
+        "value": 24100.0,
+        "confidence": 0.98,
+        "source_text": "Less: Minority Interest: 24,100",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "net_profit_attributable_to_group": {
+        "value": 516200.0,
+        "confidence": 0.99,
+        "source_text": "Consolidated Net Profit attributable to Group: 516,200",
+        "page_number": 1,
+        "is_missing": false
+      }
+    },
+    "tables": {
+      "pnl_periods": [
+        {
+          "period": "2026",
+          "interest_earned": 1845200.0,
+          "other_income": 312500.0,
+          "total_income": 2157700.0,
+          "interest_expended": 980100.0,
+          "operating_expenses": 462300.0,
+          "provisions_and_contingencies": 175000.0,
+          "total_expenditure": 1617400.0,
+          "net_profit_before_minority_interest": 540300.0,
+          "minority_interest": 24100.0,
+          "net_profit_attributable_to_group": 516200.0
+        }
+      ]
+    },
+    "periods_detected": ["2026"],
+    "currency": "INR",
+    "notes": []
+  },
+  "validation": {
+    "overall_status": "PASS",
+    "passed_count": 4,
+    "failed_count": 0,
+    "not_applicable_count": 0,
+    "total_checks": 4,
+    "checks": [
+      {
+        "check_id": "PNL_TOTAL_INCOME_2026",
+        "formula_name": "Total Income Reconciliation (2026)",
+        "formula_description": "Interest Earned + Other Income ≈ Total Income for 2026",
+        "operands": {
+          "period": "2026",
+          "interest_earned": 1845200.0,
+          "other_income": 312500.0,
+          "total_income": 2157700.0
+        },
+        "calculated_value": 2157700.0,
+        "reported_value": 2157700.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 2,157,700.00 matches reported value 2,157,700.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "PNL_TOTAL_EXPENDITURE_2026",
+        "formula_name": "Total Expenditure Reconciliation (2026)",
+        "formula_description": "Interest Expended + Operating Expenses + Provisions ≈ Total Expenditure for 2026",
+        "operands": {
+          "period": "2026",
+          "interest_expended": 980100.0,
+          "operating_expenses": 462300.0,
+          "provisions": 175000.0,
+          "total_expenditure": 1617400.0
+        },
+        "calculated_value": 1617400.0,
+        "reported_value": 1617400.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 1,617,400.00 matches reported value 1,617,400.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "PNL_PROFIT_BEFORE_MINORITY_2026",
+        "formula_name": "Net Profit before Minority Interest (2026)",
+        "formula_description": "Total Income - Total Expenditure ≈ Net Profit before Minority Interest for 2026",
+        "operands": {
+          "period": "2026",
+          "total_income": 2157700.0,
+          "total_expenditure": 1617400.0,
+          "reported_net_profit_before_minority": 540300.0
+        },
+        "calculated_value": 540300.0,
+        "reported_value": 540300.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 540,300.00 matches reported value 540,300.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "PNL_NET_PROFIT_GROUP_2026",
+        "formula_name": "Consolidated Net Profit attributable to Group (2026)",
+        "formula_description": "Profit before Minority Interest - Minority Interest ≈ Consolidated Net Profit for 2026",
+        "operands": {
+          "period": "2026",
+          "net_profit_before_minority": 540300.0,
+          "minority_interest": 24100.0,
+          "reported_net_profit_group": 516200.0
+        },
+        "calculated_value": 516200.0,
+        "reported_value": 516200.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 516,200.00 matches reported value 516,200.00 (Variance: 0.0000 <= 0.05)."
+      }
+    ]
+  },
+  "processing_metadata": {
+    "extracted_at": "2026-09-11T14:32:00Z",
+    "processing_duration_ms": 380.0,
+    "ocr_engine": "Gemini Vision OCR + PyMuPDF",
+    "ai_model": "gemini-2.5-flash",
+    "pages_processed": 1,
+    "file_hash": "f519302ba98e18c74b1e5a7b1b369c762d0012"
+  }
+}

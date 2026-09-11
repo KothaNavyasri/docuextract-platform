@@ -1,0 +1,26 @@
+services:
+  # Backend FastAPI Web Service
+  - type: web
+    name: docuextract-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: DATABASE_URL
+        value: sqlite:///./documents.db
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Frontend Static / Web Service
+  - type: web
+    name: docuextract-frontend
+    env: node
+    buildCommand: "npm --prefix frontend install"
+    startCommand: "node frontend/server.js"
+    envVars:
+      - key: PORT
+        value: 3000

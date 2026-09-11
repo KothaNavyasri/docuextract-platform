@@ -1,0 +1,141 @@
+{
+  "document_name": "Consolidated Balance Sheet 2026.pdf",
+  "document_type": "balance_sheet",
+  "processing_status": "VALIDATION_PASSED",
+  "file_validation": {
+    "is_valid": true,
+    "filename": "Consolidated Balance Sheet 2026.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 131719,
+    "page_count": 1,
+    "is_scanned": true,
+    "errors": []
+  },
+  "extracted_data": {
+    "summary_fields": {
+      "period_ended": {
+        "value": "31-03-2026",
+        "confidence": 0.98,
+        "source_text": "As on 31-03-2026",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "total_assets": {
+        "value": 15420350.0,
+        "confidence": 0.99,
+        "source_text": "TOTAL ASSETS: 15,420,350",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "total_capital_and_liabilities": {
+        "value": 15420350.0,
+        "confidence": 0.99,
+        "source_text": "TOTAL CAPITAL AND LIABILITIES: 15,420,350",
+        "page_number": 1,
+        "is_missing": false
+      }
+    },
+    "tables": {
+      "balance_sheet_periods": [
+        {
+          "period": "2026",
+          "total_assets": 15420350.0,
+          "total_capital_and_liabilities": 15420350.0,
+          "current_assets": 6120400.0,
+          "non_current_assets": 9299950.0
+        },
+        {
+          "period": "2025",
+          "total_assets": 13850200.0,
+          "total_capital_and_liabilities": 13850200.0,
+          "current_assets": 5400000.0,
+          "non_current_assets": 8450200.0
+        }
+      ]
+    },
+    "periods_detected": ["2026", "2025"],
+    "currency": "INR",
+    "notes": []
+  },
+  "validation": {
+    "overall_status": "PASS",
+    "passed_count": 4,
+    "failed_count": 0,
+    "not_applicable_count": 0,
+    "total_checks": 4,
+    "checks": [
+      {
+        "check_id": "BS_ASSETS_EQ_LIAB_2026",
+        "formula_name": "Balance Sheet Equality (2026)",
+        "formula_description": "Total Capital & Liabilities ≈ Total Assets for 2026",
+        "operands": {
+          "period": "2026",
+          "total_capital_and_liabilities": 15420350.0,
+          "total_assets": 15420350.0
+        },
+        "calculated_value": 15420350.0,
+        "reported_value": 15420350.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 15,420,350.00 matches reported value 15,420,350.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "BS_ASSET_COMPONENTS_2026",
+        "formula_name": "Total Assets Component Reconciliation (2026)",
+        "formula_description": "Current Assets + Non-Current Assets ≈ Total Assets for 2026",
+        "operands": {
+          "current_assets": 6120400.0,
+          "non_current_assets": 9299950.0,
+          "total_assets": 15420350.0
+        },
+        "calculated_value": 15420350.0,
+        "reported_value": 15420350.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 15,420,350.00 matches reported value 15,420,350.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "BS_ASSETS_EQ_LIAB_2025",
+        "formula_name": "Balance Sheet Equality (2025)",
+        "formula_description": "Total Capital & Liabilities ≈ Total Assets for 2025",
+        "operands": {
+          "period": "2025",
+          "total_capital_and_liabilities": 13850200.0,
+          "total_assets": 13850200.0
+        },
+        "calculated_value": 13850200.0,
+        "reported_value": 13850200.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 13,850,200.00 matches reported value 13,850,200.00 (Variance: 0.0000 <= 0.05)."
+      },
+      {
+        "check_id": "BS_ASSET_COMPONENTS_2025",
+        "formula_name": "Total Assets Component Reconciliation (2025)",
+        "formula_description": "Current Assets + Non-Current Assets ≈ Total Assets for 2025",
+        "operands": {
+          "current_assets": 5400000.0,
+          "non_current_assets": 8450200.0,
+          "total_assets": 13850200.0
+        },
+        "calculated_value": 13850200.0,
+        "reported_value": 13850200.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 0.05,
+        "explanation": "PASSED: Calculated value 13,850,200.00 matches reported value 13,850,200.00 (Variance: 0.0000 <= 0.05)."
+      }
+    ]
+  },
+  "processing_metadata": {
+    "extracted_at": "2026-09-11T14:31:00Z",
+    "processing_duration_ms": 412.0,
+    "ocr_engine": "Gemini Vision OCR + PyMuPDF",
+    "ai_model": "gemini-2.5-flash",
+    "pages_processed": 1,
+    "file_hash": "c71e98d89b14f820c74b1e5a7b1b369c762d98"
+  }
+}
