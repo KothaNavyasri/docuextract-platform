@@ -447,34 +447,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     historyTableBody.innerHTML = items.map(item => `
       <tr>
-        <td><strong>${item.document_name}</strong></td>
+        <td><strong>#${item.id} ${item.document_name}</strong></td>
         <td><span class="pill pill-neutral">${formatDocType(item.document_type)}</span></td>
         <td>${item.page_count}</td>
         <td>${new Date(item.created_at).toLocaleString()}</td>
         <td><span class="pill pill-${item.validation_status === 'PASS' ? 'pass' : item.validation_status === 'FAIL' ? 'fail' : 'na'}">${item.validation_status}</span></td>
         <td>${item.passed_checks} / ${item.total_checks}</td>
         <td>
-          <button class="api-settings-btn inspect-btn" data-name="${item.document_name}" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;">
+          <button class="api-settings-btn inspect-btn" data-id="${item.id}" data-name="${item.document_name}" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;">
             🔍 Inspect
           </button>
         </td>
       </tr>
     `).join("");
 
-    // Attach inspect click listeners
+    // Attach inspect click listeners strictly by ID
     document.querySelectorAll(".inspect-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const docName = btn.getAttribute("data-name");
-        await inspectDocumentByName(docName);
+        const docId = btn.getAttribute("data-id");
+        console.log(`[DocuExtract] Inspecting document ID: ${docId}`);
+        await inspectDocumentById(docId);
       });
     });
   }
 
-  async function inspectDocumentByName(name) {
+  async function inspectDocumentById(docId) {
     try {
-      const res = await fetch(`${state.apiBaseUrl}/documents/${encodeURIComponent(name)}`);
+      const res = await fetch(`${state.apiBaseUrl}/documents/${encodeURIComponent(docId)}`);
       if (!res.ok) throw new Error("Document not found");
       const doc = await res.json();
+      console.log(`[DocuExtract] Loaded Document #${doc.id}: ${doc.document_name} (${doc.document_type})`, doc);
       state.currentDocument = doc;
       renderDocumentDetails(doc);
       switchTab("inspector");
@@ -482,6 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert(`Could not load document: ${err.message}`);
     }
   }
+
 
   function updateCounters(items) {
     statTotalDocs.textContent = items.length;

@@ -104,6 +104,7 @@ async def process_document(
         )
 
     file_hash = compute_file_hash(file_content)
+    logger.info(f"Processing '{filename}' | Size: {len(file_content)} bytes | SHA256: {file_hash[:12]}... | Type: {document_type.value}")
 
     # 2. Extract Images & Native Text
     try:
@@ -201,10 +202,12 @@ async def process_document(
     try:
         db_doc = crud.create_document_record(db, response_data)
         response_data.id = db_doc.id
+        logger.info(f"Persisted '{filename}' as Document #{db_doc.id} | Hash: {file_hash[:12]} | Validation: {validation_summary.overall_status.value}")
     except Exception as e:
         logger.error(f"Failed to persist document to database: {e}")
 
     return response_data
+
 
 @router.get("/documents", response_model=DocumentListResponse, tags=["Documents"])
 async def list_documents(

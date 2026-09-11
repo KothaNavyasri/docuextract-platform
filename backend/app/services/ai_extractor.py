@@ -655,11 +655,17 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
             low = line_text.lower()
             if 'cashier' in low:
                 return False
-            if any(k in low for k in ['subtotal', 'sub total', 'sub_total', 'net total', 'net tatal', 'grand total', 'tax summary', 'ax summary', 'total qty', 'total amt', 'total due']):
+            if any(k in low for k in [
+                'subtotal', 'sub total', 'sub_total', 'net total', 'net tatal', 'grand total',
+                'tax summary', 'ax summary', 'gst summary', 'total sales', 'sales (inclusive',
+                'inclusive gst', 'inclusive g5t', 'total qty', 'total amt', 'total due',
+                'total amount', 'total rm', 'total (inclusive'
+            ]):
                 return True
             if re.search(r'\b(change|casn|cash)\b', low) and not 'cashier' in low:
                 return True
             return False
+
 
         invoice_items: List[LineItem] = []
         inv_summary_lines: List[str] = []
