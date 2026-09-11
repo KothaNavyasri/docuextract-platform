@@ -1,0 +1,779 @@
+{
+  "id": 23,
+  "document_name": "Consolidated Cash Flow Statement 2018.pdf",
+  "document_type": "cash_flow_statement",
+  "processing_status": "VALIDATION_PASSED",
+  "file_validation": {
+    "is_valid": true,
+    "filename": "Consolidated Cash Flow Statement 2018.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 237971,
+    "page_count": 2,
+    "is_scanned": true,
+    "errors": []
+  },
+  "extracted_data": {
+    "statement_title": "Consolidated Cash Flow Statement",
+    "reporting_period": "March 31, 2018",
+    "summary_fields": {
+      "operating_cash_flow": {
+        "value": 172143764.0,
+        "confidence": 0.98,
+        "source_text": "Net cash from operating activities | 172,143,764 | 172,815,931: 172143764.0",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "investing_cash_flow": {
+        "value": -8521873.0,
+        "confidence": 0.98,
+        "source_text": "Net cash used in investing activities | (8,521,873) | (11,476,802): -8521873.0",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "financing_cash_flow": {
+        "value": 573776603.0,
+        "confidence": 0.98,
+        "source_text": "Net cash (used in) / from financing activities | 573,776,603 | (58,929,743): 573776603.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "foreign_exchange_adjustment": {
+        "value": 105872.0,
+        "confidence": 0.95,
+        "source_text": "Effect of exchange fluctuation on translation reserve | 105,872 | (282,622): 105872.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "other_adjustments": {
+        "value": 0.0,
+        "confidence": 0.95,
+        "source_text": "Cash and cash equivalents on amalgamation [Refer Schedule 18(1)] | 295,617: 0.0",
+        "page_number": 2,
+        "is_missing": true
+      },
+      "net_increase_in_cash": {
+        "value": 737504366.0,
+        "confidence": 0.99,
+        "source_text": "Net increase in cash and cash equivalents | 737,504,366 | 102,422,381: 737504366.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "opening_cash_balance": {
+        "value": 493111196.0,
+        "confidence": 0.98,
+        "source_text": "Cash and cash equivalents as at April 1st | 493,111,196 | 390,688,815: 493111196.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "closing_cash_balance": {
+        "value": 1230615562.0,
+        "confidence": 0.99,
+        "source_text": "Cash and cash equivalents as at March 31st | 1,230,615,562 | 493,111,196: 1230615562.0",
+        "page_number": 2,
+        "is_missing": false
+      }
+    },
+    "tables": {
+      "cash_flow_periods": [
+        {
+          "period": "31-Mar-18",
+          "operating_cash_flow": 172143764.0,
+          "investing_cash_flow": -8521873.0,
+          "financing_cash_flow": 573776603.0,
+          "foreign_exchange_adjustment": 105872.0,
+          "other_adjustments": 0.0,
+          "net_increase_in_cash": 737504366.0,
+          "opening_cash_balance": 493111196.0,
+          "closing_cash_balance": 1230615562.0
+        },
+        {
+          "period": "31-Mar-17",
+          "operating_cash_flow": 172815931.0,
+          "investing_cash_flow": -11476802.0,
+          "financing_cash_flow": -58929743.0,
+          "foreign_exchange_adjustment": -282622.0,
+          "other_adjustments": 295617.0,
+          "net_increase_in_cash": 102422381.0,
+          "opening_cash_balance": 390688815.0,
+          "closing_cash_balance": 493111196.0
+        }
+      ]
+    },
+    "line_items": [
+      {
+        "label": "Consolidated profit before income tax",
+        "item_description": "Consolidated profit before income tax",
+        "values": {
+          "31-Mar-18": 284131068.0,
+          "31-Mar-17": 233311478.0
+        },
+        "quantity": 1.0,
+        "unit_price": 284131068.0,
+        "line_total": 284131068.0,
+        "tax_rate": 0.0,
+        "raw_text": "Consolidated profit before income tax | 284,131,068 | 233,311,478",
+        "evidence": "Consolidated profit before income tax | 284,131,068 | 233,311,478",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Depreciation on fixed assets",
+        "item_description": "Depreciation on fixed assets",
+        "values": {
+          "31-Mar-18": 9667819.0,
+          "31-Mar-17": 8861876.0
+        },
+        "quantity": 1.0,
+        "unit_price": 9667819.0,
+        "line_total": 9667819.0,
+        "tax_rate": 0.0,
+        "raw_text": "Depreciation on fixed assets | 9,667,819 | 8,861,876",
+        "evidence": "Depreciation on fixed assets | 9,667,819 | 8,861,876",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "(Profit) / loss on revaluation of investments",
+        "item_description": "(Profit) / loss on revaluation of investments",
+        "values": {
+          "31-Mar-18": 1570448.0,
+          "31-Mar-17": -87543.0
+        },
+        "quantity": 1.0,
+        "unit_price": 1570448.0,
+        "line_total": 1570448.0,
+        "tax_rate": 0.0,
+        "raw_text": "(Profit) / loss on revaluation of investments | 1,570,448 | (87,543)",
+        "evidence": "(Profit) / loss on revaluation of investments | 1,570,448 | (87,543)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Amortisation of premia on held to maturity investments",
+        "item_description": "Amortisation of premia on held to maturity investments",
+        "values": {
+          "31-Mar-18": 3599102.0,
+          "31-Mar-17": 1756569.0
+        },
+        "quantity": 1.0,
+        "unit_price": 3599102.0,
+        "line_total": 3599102.0,
+        "tax_rate": 0.0,
+        "raw_text": "Amortisation of premia on held to maturity investments | 3,599,102 | 1,756,569",
+        "evidence": "Amortisation of premia on held to maturity investments | 3,599,102 | 1,756,569",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "(Profit) / loss on sale of fixed assets",
+        "item_description": "(Profit) / loss on sale of fixed assets",
+        "values": {
+          "31-Mar-18": 11833.0,
+          "31-Mar-17": 16229.0
+        },
+        "quantity": 1.0,
+        "unit_price": 11833.0,
+        "line_total": 11833.0,
+        "tax_rate": 0.0,
+        "raw_text": "(Profit) / loss on sale of fixed assets | 11,833 | 16,229",
+        "evidence": "(Profit) / loss on sale of fixed assets | 11,833 | 16,229",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Provision / charge for non performing assets",
+        "item_description": "Provision / charge for non performing assets",
+        "values": {
+          "31-Mar-18": 57553339.0,
+          "31-Mar-17": 37024296.0
+        },
+        "quantity": 1.0,
+        "unit_price": 57553339.0,
+        "line_total": 57553339.0,
+        "tax_rate": 0.0,
+        "raw_text": "Provision / charge for non performing assets | 57,553,339 | 37,024,296",
+        "evidence": "Provision / charge for non performing assets | 57,553,339 | 37,024,296",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Provision for dimunition in value of Investments",
+        "item_description": "Provision for dimunition in value of Investments",
+        "values": {
+          "31-Mar-18": 308075.0,
+          "31-Mar-17": -76417.0
+        },
+        "quantity": 1.0,
+        "unit_price": 308075.0,
+        "line_total": 308075.0,
+        "tax_rate": 0.0,
+        "raw_text": "Provision for dimunition in value of Investments | 308,075 | (76,417)",
+        "evidence": "Provision for dimunition in value of Investments | 308,075 | (76,417)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Floating provisions",
+        "item_description": "Floating provisions",
+        "values": {
+          "31-Mar-18": 250000.0
+        },
+        "quantity": 1.0,
+        "unit_price": 250000.0,
+        "line_total": 250000.0,
+        "tax_rate": 0.0,
+        "raw_text": "Floating provisions | 250,000",
+        "evidence": "Floating provisions | 250,000",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Provision for standard assets",
+        "item_description": "Provision for standard assets",
+        "values": {
+          "31-Mar-18": 6575746.0,
+          "31-Mar-17": 4312322.0
+        },
+        "quantity": 1.0,
+        "unit_price": 6575746.0,
+        "line_total": 6575746.0,
+        "tax_rate": 0.0,
+        "raw_text": "Provision for standard assets | 6,575,746 | 4,312,322",
+        "evidence": "Provision for standard assets | 6,575,746 | 4,312,322",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Contingency provisions",
+        "item_description": "Contingency provisions",
+        "values": {
+          "31-Mar-18": 3961191.0,
+          "31-Mar-17": 388440.0
+        },
+        "quantity": 1.0,
+        "unit_price": 3961191.0,
+        "line_total": 3961191.0,
+        "tax_rate": 0.0,
+        "raw_text": "Contingency provisions | 3,961,191 | 388,440",
+        "evidence": "Contingency provisions | 3,961,191 | 388,440",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Share in current year's profits of associates",
+        "item_description": "Share in current year's profits of associates",
+        "values": {
+          "31-Mar-18": -5221.0,
+          "31-Mar-17": -23393.0
+        },
+        "quantity": 1.0,
+        "unit_price": -5221.0,
+        "line_total": -5221.0,
+        "tax_rate": 0.0,
+        "raw_text": "Share in current year's profits of associates | (5,221) | (23,393)",
+        "evidence": "Share in current year's profits of associates | (5,221) | (23,393)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "(Increase) / decrease in investments (excluding investments in subsidiaries)",
+        "item_description": "(Increase) / decrease in investments (excluding investments in subsidiaries)",
+        "values": {
+          "31-Mar-18": -282310524.0,
+          "31-Mar-17": -173257700.0
+        },
+        "quantity": 1.0,
+        "unit_price": -282310524.0,
+        "line_total": -282310524.0,
+        "tax_rate": 0.0,
+        "raw_text": "(Increase) / decrease in investments (excluding investments in subsidiaries) | (282,310,524) | (173,257,700)",
+        "evidence": "(Increase) / decrease in investments (excluding investments in subsidiaries) | (282,310,524) | (173,257,700)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "(Increase) / decrease in advances",
+        "item_description": "(Increase) / decrease in advances",
+        "values": {
+          "31-Mar-18": -1203053719.0,
+          "31-Mar-17": -1018904990.0
+        },
+        "quantity": 1.0,
+        "unit_price": -1203053719.0,
+        "line_total": -1203053719.0,
+        "tax_rate": 0.0,
+        "raw_text": "(Increase) / decrease in advances | (1,203,053,719) | (1,018,904,990)",
+        "evidence": "(Increase) / decrease in advances | (1,203,053,719) | (1,018,904,990)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Increase / (decrease) in deposits",
+        "item_description": "Increase / (decrease) in deposits",
+        "values": {
+          "31-Mar-18": 1452408940.0,
+          "31-Mar-17": 972609590.0
+        },
+        "quantity": 1.0,
+        "unit_price": 1452408940.0,
+        "line_total": 1452408940.0,
+        "tax_rate": 0.0,
+        "raw_text": "Increase / (decrease) in deposits | 1,452,408,940 | 972,609,590",
+        "evidence": "Increase / (decrease) in deposits | 1,452,408,940 | 972,609,590",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "(Increase) / decrease in other assets",
+        "item_description": "(Increase) / decrease in other assets",
+        "values": {
+          "31-Mar-18": 52336433.0,
+          "31-Mar-17": -44855329.0
+        },
+        "quantity": 1.0,
+        "unit_price": 52336433.0,
+        "line_total": 52336433.0,
+        "tax_rate": 0.0,
+        "raw_text": "(Increase) / decrease in other assets | 52,336,433 | (44,855,329)",
+        "evidence": "(Increase) / decrease in other assets | 52,336,433 | (44,855,329)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Increase / (decrease) in other liabilities and provisions",
+        "item_description": "Increase / (decrease) in other liabilities and provisions",
+        "values": {
+          "31-Mar-18": -114511772.0,
+          "31-Mar-17": 228337692.0
+        },
+        "quantity": 1.0,
+        "unit_price": -114511772.0,
+        "line_total": -114511772.0,
+        "tax_rate": 0.0,
+        "raw_text": "Increase / (decrease) in other liabilities and provisions | (114,511,772) | 228,337,692",
+        "evidence": "Increase / (decrease) in other liabilities and provisions | (114,511,772) | 228,337,692",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Direct taxes paid (net of refunds)",
+        "item_description": "Direct taxes paid (net of refunds)",
+        "values": {
+          "31-Mar-18": -100098994.0,
+          "31-Mar-17": -76847189.0
+        },
+        "quantity": 1.0,
+        "unit_price": -100098994.0,
+        "line_total": -100098994.0,
+        "tax_rate": 0.0,
+        "raw_text": "Direct taxes paid (net of refunds) | (100,098,994) | (76,847,189)",
+        "evidence": "Direct taxes paid (net of refunds) | (100,098,994) | (76,847,189)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Net cash from operating activities",
+        "item_description": "Net cash from operating activities",
+        "values": {
+          "31-Mar-18": 172143764.0,
+          "31-Mar-17": 172815931.0
+        },
+        "quantity": 1.0,
+        "unit_price": 172143764.0,
+        "line_total": 172143764.0,
+        "tax_rate": 0.0,
+        "raw_text": "Net cash from operating activities | 172,143,764 | 172,815,931",
+        "evidence": "Net cash from operating activities | 172,143,764 | 172,815,931",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Purchase of fixed assets",
+        "item_description": "Purchase of fixed assets",
+        "values": {
+          "31-Mar-18": -8477746.0,
+          "31-Mar-17": -11577570.0
+        },
+        "quantity": 1.0,
+        "unit_price": -8477746.0,
+        "line_total": -8477746.0,
+        "tax_rate": 0.0,
+        "raw_text": "Purchase of fixed assets | (8,477,746) | (11,577,570)",
+        "evidence": "Purchase of fixed assets | (8,477,746) | (11,577,570)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Proceeds from sale of fixed assets",
+        "item_description": "Proceeds from sale of fixed assets",
+        "values": {
+          "31-Mar-18": 99204.0,
+          "31-Mar-17": 100768.0
+        },
+        "quantity": 1.0,
+        "unit_price": 99204.0,
+        "line_total": 99204.0,
+        "tax_rate": 0.0,
+        "raw_text": "Proceeds from sale of fixed assets | 99,204 | 100,768",
+        "evidence": "Proceeds from sale of fixed assets | 99,204 | 100,768",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Investment in subsidiaries and / or joint ventures",
+        "item_description": "Investment in subsidiaries and / or joint ventures",
+        "values": {
+          "31-Mar-18": -143331.0
+        },
+        "quantity": 1.0,
+        "unit_price": -143331.0,
+        "line_total": -143331.0,
+        "tax_rate": 0.0,
+        "raw_text": "Investment in subsidiaries and / or joint ventures | (143,331)",
+        "evidence": "Investment in subsidiaries and / or joint ventures | (143,331)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Net cash used in investing activities",
+        "item_description": "Net cash used in investing activities",
+        "values": {
+          "31-Mar-18": -8521873.0,
+          "31-Mar-17": -11476802.0
+        },
+        "quantity": 1.0,
+        "unit_price": -8521873.0,
+        "line_total": -8521873.0,
+        "tax_rate": 0.0,
+        "raw_text": "Net cash used in investing activities | (8,521,873) | (11,476,802)",
+        "evidence": "Net cash used in investing activities | (8,521,873) | (11,476,802)",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "HDFC Bank Limited Annual Report 2017-18 We understand your world",
+        "item_description": "HDFC Bank Limited Annual Report 2017-18 We understand your world",
+        "values": {
+          "31-Mar-18": 162.0
+        },
+        "quantity": 1.0,
+        "unit_price": 162.0,
+        "line_total": 162.0,
+        "tax_rate": 0.0,
+        "raw_text": "HDFC Bank Limited Annual Report 2017-18 | 162 | We understand your world",
+        "evidence": "HDFC Bank Limited Annual Report 2017-18 | 162 | We understand your world",
+        "page_number": 1,
+        "confidence": 0.98
+      },
+      {
+        "label": "Increase in minority interest",
+        "item_description": "Increase in minority interest",
+        "values": {
+          "31-Mar-18": 666553.0,
+          "31-Mar-17": 818605.0
+        },
+        "quantity": 1.0,
+        "unit_price": 666553.0,
+        "line_total": 666553.0,
+        "tax_rate": 0.0,
+        "raw_text": "Increase in minority interest | 666,553 | 818,605",
+        "evidence": "Increase in minority interest | 666,553 | 818,605",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Money received on exercise of stock options by employees",
+        "item_description": "Money received on exercise of stock options by employees",
+        "values": {
+          "31-Mar-18": 27259098.0,
+          "31-Mar-17": 22615161.0
+        },
+        "quantity": 1.0,
+        "unit_price": 27259098.0,
+        "line_total": 27259098.0,
+        "tax_rate": 0.0,
+        "raw_text": "Money received on exercise of stock options by employees | 27,259,098 | 22,615,161",
+        "evidence": "Money received on exercise of stock options by employees | 27,259,098 | 22,615,161",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Proceeds from issue of Additional Tier I and Tier Il Capital Bonds",
+        "item_description": "Proceeds from issue of Additional Tier I and Tier Il Capital Bonds",
+        "values": {
+          "31-Mar-18": 100000000.0
+        },
+        "quantity": 1.0,
+        "unit_price": 100000000.0,
+        "line_total": 100000000.0,
+        "tax_rate": 0.0,
+        "raw_text": "Proceeds from issue of Additional Tier I and Tier Il Capital Bonds | 100,000,000",
+        "evidence": "Proceeds from issue of Additional Tier I and Tier Il Capital Bonds | 100,000,000",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Redemption of subordinated debt",
+        "item_description": "Redemption of subordinated debt",
+        "values": {
+          "31-Mar-18": -20750000.0,
+          "31-Mar-17": -19084500.0
+        },
+        "quantity": 1.0,
+        "unit_price": -20750000.0,
+        "line_total": -20750000.0,
+        "tax_rate": 0.0,
+        "raw_text": "Redemption of subordinated debt | (20,750,000) | (19,084,500)",
+        "evidence": "Redemption of subordinated debt | (20,750,000) | (19,084,500)",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Dividend paid during the year",
+        "item_description": "Dividend paid during the year",
+        "values": {
+          "31-Mar-18": -28312716.0,
+          "31-Mar-17": -24083093.0
+        },
+        "quantity": 1.0,
+        "unit_price": -28312716.0,
+        "line_total": -28312716.0,
+        "tax_rate": 0.0,
+        "raw_text": "Dividend paid during the year | (28,312,716) | (24,083,093)",
+        "evidence": "Dividend paid during the year | (28,312,716) | (24,083,093)",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Tax on dividend",
+        "item_description": "Tax on dividend",
+        "values": {
+          "31-Mar-18": -6100741.0,
+          "31-Mar-17": -5297258.0
+        },
+        "quantity": 1.0,
+        "unit_price": -6100741.0,
+        "line_total": -6100741.0,
+        "tax_rate": 0.0,
+        "raw_text": "Tax on dividend | (6,100,741) | (5,297,258)",
+        "evidence": "Tax on dividend | (6,100,741) | (5,297,258)",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Net cash (used in) / from financing activities",
+        "item_description": "Net cash (used in) / from financing activities",
+        "values": {
+          "31-Mar-18": 573776603.0,
+          "31-Mar-17": -58929743.0
+        },
+        "quantity": 1.0,
+        "unit_price": 573776603.0,
+        "line_total": 573776603.0,
+        "tax_rate": 0.0,
+        "raw_text": "Net cash (used in) / from financing activities | 573,776,603 | (58,929,743)",
+        "evidence": "Net cash (used in) / from financing activities | 573,776,603 | (58,929,743)",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Effect of exchange fluctuation on translation reserve",
+        "item_description": "Effect of exchange fluctuation on translation reserve",
+        "values": {
+          "31-Mar-18": 105872.0,
+          "31-Mar-17": -282622.0
+        },
+        "quantity": 1.0,
+        "unit_price": 105872.0,
+        "line_total": 105872.0,
+        "tax_rate": 0.0,
+        "raw_text": "Effect of exchange fluctuation on translation reserve | 105,872 | (282,622)",
+        "evidence": "Effect of exchange fluctuation on translation reserve | 105,872 | (282,622)",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Cash and cash equivalents on amalgamation [Refer Schedule 18(1)]",
+        "item_description": "Cash and cash equivalents on amalgamation [Refer Schedule 18(1)]",
+        "values": {
+          "31-Mar-18": 295617.0
+        },
+        "quantity": 1.0,
+        "unit_price": 295617.0,
+        "line_total": 295617.0,
+        "tax_rate": 0.0,
+        "raw_text": "Cash and cash equivalents on amalgamation [Refer Schedule 18(1)] | 295,617",
+        "evidence": "Cash and cash equivalents on amalgamation [Refer Schedule 18(1)] | 295,617",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Net increase in cash and cash equivalents",
+        "item_description": "Net increase in cash and cash equivalents",
+        "values": {
+          "31-Mar-18": 737504366.0,
+          "31-Mar-17": 102422381.0
+        },
+        "quantity": 1.0,
+        "unit_price": 737504366.0,
+        "line_total": 737504366.0,
+        "tax_rate": 0.0,
+        "raw_text": "Net increase in cash and cash equivalents | 737,504,366 | 102,422,381",
+        "evidence": "Net increase in cash and cash equivalents | 737,504,366 | 102,422,381",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Cash and cash equivalents as at April 1st",
+        "item_description": "Cash and cash equivalents as at April 1st",
+        "values": {
+          "31-Mar-18": 493111196.0,
+          "31-Mar-17": 390688815.0
+        },
+        "quantity": 1.0,
+        "unit_price": 493111196.0,
+        "line_total": 493111196.0,
+        "tax_rate": 0.0,
+        "raw_text": "Cash and cash equivalents as at April 1st | 493,111,196 | 390,688,815",
+        "evidence": "Cash and cash equivalents as at April 1st | 493,111,196 | 390,688,815",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "Cash and cash equivalents as at March 31st",
+        "item_description": "Cash and cash equivalents as at March 31st",
+        "values": {
+          "31-Mar-18": 1230615562.0,
+          "31-Mar-17": 493111196.0
+        },
+        "quantity": 1.0,
+        "unit_price": 1230615562.0,
+        "line_total": 1230615562.0,
+        "tax_rate": 0.0,
+        "raw_text": "Cash and cash equivalents as at March 31st | 1,230,615,562 | 493,111,196",
+        "evidence": "Cash and cash equivalents as at March 31st | 1,230,615,562 | 493,111,196",
+        "page_number": 2,
+        "confidence": 0.98
+      },
+      {
+        "label": "HDFC Bank Limited Annual Report 2017-18 We understand your world",
+        "item_description": "HDFC Bank Limited Annual Report 2017-18 We understand your world",
+        "values": {
+          "31-Mar-18": 163.0
+        },
+        "quantity": 1.0,
+        "unit_price": 163.0,
+        "line_total": 163.0,
+        "tax_rate": 0.0,
+        "raw_text": "HDFC Bank Limited Annual Report 2017-18 | 163 | We understand your world",
+        "evidence": "HDFC Bank Limited Annual Report 2017-18 | 163 | We understand your world",
+        "page_number": 2,
+        "confidence": 0.98
+      }
+    ],
+    "raw_text_by_page": {
+      "1": "Consolidated Cash Flow Statement\nFor the year ended March 31, 2018\n in \u2018000\nYear ended | Year ended\n31-Mar-18 | 31-Mar-17\nCash flows from operating activities\nConsolidated profit before income tax | 284,131,068 | 233,311,478\nAdjustments for:\nDepreciation on fixed assets | 9,667,819 | 8,861,876\n(Profit) / loss on revaluation of investments | 1,570,448 | (87,543)\nAmortisation of premia on held to maturity investments | 3,599,102 | 1,756,569\n(Profit) / loss on sale of fixed assets | 11,833 | 16,229\nProvision / charge for non performing assets | 57,553,339 | 37,024,296\nProvision for dimunition in value of Investments | 308,075 | (76,417)\nFloating provisions | 250,000\nProvision for standard assets | 6,575,746 | 4,312,322\nContingency provisions | 3,961,191 | 388,440\nShare in current year's profits of associates | (5,221) | (23,393)\n367,373,400 | 285,733,857\nAdjustments for:\n(Increase) / decrease in investments (excluding investments in subsidiaries) | (282,310,524) | (173,257,700)\n(Increase) / decrease in advances | (1,203,053,719) | (1,018,904,990)\nIncrease / (decrease) in deposits | 1,452,408,940 | 972,609,590\n(Increase) / decrease in other assets | 52,336,433 | (44,855,329)\nIncrease / (decrease) in other liabilities and provisions | (114,511,772) | 228,337,692\n272,242,758 | 249,663,120\nDirect taxes paid (net of refunds) | (100,098,994) | (76,847,189)\nNet cash from operating activities | 172,143,764 | 172,815,931\nCash flows used in investing activities\nPurchase of fixed assets | (8,477,746) | (11,577,570)\nProceeds from sale of fixed assets | 99,204 | 100,768\nInvestment in subsidiaries and / or joint ventures | (143,331)\nNet cash used in investing activities | (8,521,873) | (11,476,802)\nHDFC BANK\nHDFC Bank Limited Annual Report 2017-18 | 162 | We understand your world",
+      "2": "Consolidated Cash Flow Statement\nFor the year ended March 31, 2018\n? in 000\nYear ended | Year ended\n31-Mar-18 | 31-Mar-17\nCash flows from financing activities\nIncrease in minority interest | 666,553 | 818,605\nMoney received on exercise of stock options by employees | 27,259,098 | 22,615,161\nIncrease / (decrease) in borrowings (excluding subordinate debt,\n501,014,409 | (33,898,658)\nProceeds from issue of Additional Tier I and Tier Il Capital Bonds | 100,000,000\nRedemption of subordinated debt | (20,750,000) | (19,084,500)\nDividend paid during the year | (28,312,716) | (24,083,093)\nTax on dividend | (6,100,741) | (5,297,258)\nNet cash (used in) / from financing activities | 573,776,603 | (58,929,743)\nEffect of exchange fluctuation on translation reserve | 105,872 | (282,622)\nCash and cash equivalents on amalgamation [Refer Schedule 18(1)] | 295,617\nNet increase in cash and cash equivalents | 737,504,366 | 102,422,381\nCash and cash equivalents as at April 1st | 493,111,196 | 390,688,815\nCash and cash equivalents as at March 31st | 1,230,615,562 | 493,111,196\nAs per our report of even date. | For and on behalf of the Board\nFor Deloitte Haskins & Sells | Shyamala Gopinath | Aditya Puri | Bobby Parikh\nChartered Accountants | Chairperson | Managing Director | Keki Mistry\nMalay Patel\nP. B. Pardiwalla | Paresh Sukthankar | Kaizad Bharucha | ParthoDatta\nPartner | Deputy Managing Director | Executive Director | Umesh Sarangi\nMembership No.: 40005 | Directors\nSanjay Dongre | Sashidhar Jagdishan\nExecutiveVicePresident | ChiefFinancialOfficer\nMumbai, April 21, 2018 | (Legal) & Company Secretary\nHDFC BANK\nHDFC Bank Limited Annual Report 2017-18 | 163 | We understand your world"
+    },
+    "periods_detected": [
+      "31-Mar-18",
+      "31-Mar-17"
+    ],
+    "currency": "INR",
+    "unit": "\u20b9 in '000",
+    "notes": [
+      "Extracted via RapidOCR 2D financial parser."
+    ]
+  },
+  "validation": {
+    "overall_status": "PASS",
+    "passed_count": 4,
+    "failed_count": 0,
+    "not_applicable_count": 0,
+    "total_checks": 4,
+    "checks": [
+      {
+        "check_id": "CF_NET_INCREASE_31-Mar-18",
+        "formula_name": "Net Increase in Cash Reconciliation (31-Mar-18)",
+        "formula_description": "Operating (172,143,764) + Investing (-8,521,873) + Financing (573,776,603) + FX (105,872) + Adjustments (0) \u2248 Net Increase (737,504,366)",
+        "operands": {
+          "period": "31-Mar-18",
+          "operating_cash_flow": 172143764.0,
+          "investing_cash_flow": -8521873.0,
+          "financing_cash_flow": 573776603.0,
+          "fx_adjustment": 105872.0,
+          "other_adjustments": 0.0,
+          "reported_net_increase": 737504366.0
+        },
+        "calculated_value": 737504366.0,
+        "reported_value": 737504366.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 737,504,366.00 matches reported value 737,504,366.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_CLOSING_CASH_31-Mar-18",
+        "formula_name": "Closing Cash Balance Reconciliation (31-Mar-18)",
+        "formula_description": "Opening Cash (493,111,196) + Net Increase (737,504,366) \u2248 Closing Cash (1,230,615,562)",
+        "operands": {
+          "period": "31-Mar-18",
+          "opening_cash": 493111196.0,
+          "net_increase": 737504366.0,
+          "reported_closing_cash": 1230615562.0
+        },
+        "calculated_value": 1230615562.0,
+        "reported_value": 1230615562.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 1,230,615,562.00 matches reported value 1,230,615,562.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_NET_INCREASE_31-Mar-17",
+        "formula_name": "Net Increase in Cash Reconciliation (31-Mar-17)",
+        "formula_description": "Operating (172,815,931) + Investing (-11,476,802) + Financing (-58,929,743) + FX (-282,622) + Adjustments (295,617) \u2248 Net Increase (102,422,381)",
+        "operands": {
+          "period": "31-Mar-17",
+          "operating_cash_flow": 172815931.0,
+          "investing_cash_flow": -11476802.0,
+          "financing_cash_flow": -58929743.0,
+          "fx_adjustment": -282622.0,
+          "other_adjustments": 295617.0,
+          "reported_net_increase": 102422381.0
+        },
+        "calculated_value": 102422381.0,
+        "reported_value": 102422381.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 102,422,381.00 matches reported value 102,422,381.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_CLOSING_CASH_31-Mar-17",
+        "formula_name": "Closing Cash Balance Reconciliation (31-Mar-17)",
+        "formula_description": "Opening Cash (390,688,815) + Net Increase (102,422,381) \u2248 Closing Cash (493,111,196)",
+        "operands": {
+          "period": "31-Mar-17",
+          "opening_cash": 390688815.0,
+          "net_increase": 102422381.0,
+          "reported_closing_cash": 493111196.0
+        },
+        "calculated_value": 493111196.0,
+        "reported_value": 493111196.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 493,111,196.00 matches reported value 493,111,196.00 (Variance: 0.00 <= 1.0)."
+      }
+    ]
+  },
+  "processing_metadata": {
+    "extracted_at": "2026-09-11T10:55:38.218718Z",
+    "processing_duration_ms": 11625.86,
+    "ocr_engine": "RapidOCR ONNX Engine",
+    "ai_model": "Deterministic Financial Parser v2.0",
+    "pages_processed": 2,
+    "file_hash": "c909985cb1dab42fd5aecb2d498977e4e2102fcacd2a59e879c5e3e568325c43"
+  }
+}

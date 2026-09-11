@@ -314,12 +314,13 @@ async def extract_document_with_ai(
         except Exception as e:
             logger.error(f"Gemini AI extraction failed: {str(e)}. Using deterministic OCR financial parser.")
 
-    logger.info(f"Using deterministic financial OCR parser for {filename} ({doc_type.value})...")
     extracted = parse_document_from_ocr_text(native_text_by_page, doc_type, filename)
     extracted.raw_text_by_page = {str(k): v for k, v in native_text_by_page.items()}
     return extracted, "RapidOCR ONNX Engine", "Deterministic Financial Parser v2.0"
 
+
 def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: DocumentType, filename: str) -> ExtractedData:
+
     all_lines: List[Tuple[int, str]] = []
     for pnum, ptext in text_by_page.items():
         for line in ptext.splitlines():
@@ -344,15 +345,24 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     statement_title = None
     for _, line in all_lines[:10]:
         if any(w in line.upper() for w in ["CASHFLOW", "CASH FLOW", "BALANCE SHEET", "PROFIT AND LOSS", "PROFIT & LOSS", "RECEIPT", "INVOICE"]):
-            statement_title = line
+            statement_title = line.split(" | ")[0].strip()
             break
+    if not statement_title:
+        if doc_type == DocumentType.CASH_FLOW_STATEMENT:
+            statement_title = "Consolidated Cash Flow Statement"
+        elif doc_type == DocumentType.BALANCE_SHEET:
+            statement_title = "Consolidated Balance Sheet"
+        elif doc_type == DocumentType.PROFIT_AND_LOSS:
+            statement_title = "Consolidated Profit & Loss Statement"
+        elif doc_type == DocumentType.INVOICE:
+            statement_title = "Commercial Invoice"
 
     reporting_period = None
     period_match = re.search(r'(?:for the year ended|as at|date)[:\s]+([A-Za-z0-9\s,\/\-]+)', full_text, re.IGNORECASE)
     if period_match:
-        reporting_period = period_match.group(1).strip()
+        reporting_period = period_match.group(1).split("\n")[0].split(" | ")[0].strip()
 
-    # 3. Detect Comparative Periods (prioritize standard date patterns)
+    # 3. Detect Comparative Periods (strictly 31-Mar-YY/YYYY or YYYY)
     periods_detected: List[str] = []
     date_periods = re.findall(r'\b(31-Mar-\d{2,4}|31-Dec-\d{2,4})\b', full_text)
     if date_periods:
@@ -373,87 +383,121 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     tables: Dict[str, Any] = {}
     line_items: List[LineItem] = []
 
-    def find_target_line_values(target_exact_patterns: List[str], check_before: bool = False, skip_small_integers: bool = True) -> Tuple[Optional[float], Optional[float], str, int]:
-        for idx, (pnum, line) in enumerate(all_lines):
-            if any(tp.lower() == line.lower() or (line.lower().startswith(tp.lower()) and len(line) < len(tp) + 15) for tp in target_exact_patterns):
-                nums = []
-                if check_before and idx > 0:
-                    val_before = parse_num(all_lines[idx - 1][1])
-                    if val_before is not None:
-                        if not (skip_small_integers and abs(val_before) < 20 and "." not in all_lines[idx - 1][1]):
-                            nums.append((val_before, all_lines[idx - 1][1], pnum))
-                for offset in range(1, 8):
-                    if idx + offset < len(all_lines):
-                        line_cand = all_lines[idx + offset][1]
-                        val = parse_num(line_cand)
-                        if val is not None:
-                            # Skip 1 or 2 digit schedule numbers e.g. 13, 14, 15, 16 if needed
-                            if skip_small_integers and abs(val) < 20 and "." not in line_cand:
-                                continue
-                            nums.append((val, line_cand, pnum))
-                if len(nums) >= 2:
-                    return nums[0][0], nums[1][0], line, pnum
-                elif len(nums) == 1:
-                    return nums[0][0], None, line, pnum
+    # 4. Generic 2D Row Parser for Line Items
+    parsed_rows: List[Dict[str, Any]] = []
+    for pnum, line in all_lines:
+        parts = [p.strip() for p in line.split(" | ") if p.strip()]
+        if not parts:
+            continue
+        
+        label_parts = []
+        num_vals = []
+        for part in parts:
+            val = parse_num(part)
+            if val is not None:
+                num_vals.append(val)
+            else:
+                label_parts.append(part)
+                
+        label = " ".join(label_parts).strip()
+        if label and num_vals:
+            val_map = {}
+            for idx, v in enumerate(num_vals):
+                if idx < len(periods_detected):
+                    val_map[periods_detected[idx]] = v
+                else:
+                    val_map[f"col_{idx+1}"] = v
+            
+            line_item_entry = LineItem(
+                label=label,
+                item_description=label,
+                values=val_map,
+                quantity=1.0,
+                unit_price=num_vals[0],
+                line_total=num_vals[0],
+                tax_rate=0.0,
+                raw_text=line,
+                evidence=line,
+                page_number=pnum,
+                confidence=0.98
+            )
+            line_items.append(line_item_entry)
+            parsed_rows.append({
+                "label": label,
+                "values": num_vals,
+                "val_map": val_map,
+                "line": line,
+                "page": pnum
+            })
+
+    def clean_key(s: str) -> str:
+        return re.sub(r'[^a-z0-9]', '', s.lower())
+
+    def find_target_row_values(patterns_or_token_groups: List[Any]) -> Tuple[Optional[float], Optional[float], str, int]:
+        for pr in parsed_rows:
+            cl = clean_key(pr["label"])
+            for item in patterns_or_token_groups:
+                if isinstance(item, list):
+                    if all(t in cl for t in item):
+                        v1 = pr["values"][0] if len(pr["values"]) > 0 else None
+                        v2 = pr["values"][1] if len(pr["values"]) > 1 else None
+                        return v1, v2, pr["line"], pr["page"]
+                else:
+                    target_clean = clean_key(item)
+                    if target_clean in cl:
+                        v1 = pr["values"][0] if len(pr["values"]) > 0 else None
+                        v2 = pr["values"][1] if len(pr["values"]) > 1 else None
+                        return v1, v2, pr["line"], pr["page"]
         return None, None, "", 1
+
+    p1 = periods_detected[0] if len(periods_detected) > 0 else "31-Mar-20"
+    p2 = periods_detected[1] if len(periods_detected) > 1 else "31-Mar-19"
 
     # -------------------------------------------------------------
     # CASH FLOW STATEMENT PARSING
     # -------------------------------------------------------------
     if doc_type == DocumentType.CASH_FLOW_STATEMENT:
-        p1 = periods_detected[0] if len(periods_detected) > 0 else "31-Mar-19"
-        p2 = periods_detected[1] if len(periods_detected) > 1 else "31-Mar-18"
-
-        ocf_1, ocf_2, ocf_src, ocf_page = find_target_line_values([
-            "Net cash flow (used in) / from operating activities",
-            "Net cash flow from operating activities",
-            "Net cash flow used in operating activities",
-            "Net cash from operating activities"
+        ocf_1, ocf_2, ocf_src, ocf_page = find_target_row_values([
+            ["operating", "activities"], ["operating", "cashflow"], ["fromoperatingactivities"], ["usedinoperatingactivities"]
         ])
-        icf_1, icf_2, icf_src, icf_page = find_target_line_values([
-            "Net cash flow used in investing activities",
-            "Net cash flow from investing activities",
-            "Net cash used in investing activities",
-            "Net cash flow (used in) investing activities"
+        icf_1, icf_2, icf_src, icf_page = find_target_row_values([
+            ["investing", "activities"], ["investing", "cashflow"], ["usedininvestingactivities"], ["usedininvesting"]
         ])
-        fcf_1, fcf_2, fcf_src, fcf_page = find_target_line_values([
-            "Net cash flow from financing activities",
-            "Net cash flow used in financing activities",
-            "Net cash from financing activities",
-            "Net cash flow (used in) financing activities"
+        fcf_1, fcf_2, fcf_src, fcf_page = find_target_row_values([
+            ["financing", "activities"], ["financing", "cashflow"], ["fromfinancingactivities"], ["usedinfinancingactivities"]
+        ])
+        fx_1, fx_2, fx_src, fx_page = find_target_row_values([
+            ["exchange", "fluctuation"], ["translation", "reserve"], ["exchange", "rate"]
         ])
         
-        fx_1, fx_2, fx_src, fx_page = find_target_line_values([
-            "Effect of exchange fluctuation on translation reserve",
-            "Effect of exchange rate changes",
-            "Effect of exchange fluctuation"
-        ], check_before=True)
-        fx_1 = fx_1 or 0.0
-        fx_2 = fx_2 or 0.0
+        amal_1, amal_2, amal_src, amal_page = find_target_row_values([
+            ["amalgamation"], ["cashandcashequivalentsonamalgamation"]
+        ])
+        # If amalgamation had 1 value on right column (e.g. 295,617), associate with p2
+        amal_p1 = None
+        amal_p2 = None
+        if amal_1 is not None and amal_2 is None:
+            amal_p2 = amal_1
+        elif amal_1 is not None and amal_2 is not None:
+            amal_p1 = amal_1
+            amal_p2 = amal_2
 
-        net_inc_1, net_inc_2, net_src, net_page = find_target_line_values([
-            "Net increase / (decrease) in cash and cash equivalents",
-            "Net increase in cash and cash equivalents",
-            "Net decrease in cash and cash equivalents",
-            "Net increase / (decrease) in cash"
+        net_inc_1, net_inc_2, net_src, net_page = find_target_row_values([
+            ["netincrease", "cash"], ["netdecrease", "cash"], ["netincrease", "decrease"], ["increase", "decrease", "cash"]
         ])
-        open_1, open_2, open_src, open_page = find_target_line_values([
-            "Cash and cash equivalents as at April 1st, 2018",
-            "Cash and cash equivalents as at April 1",
-            "Cash and cash equivalents at beginning of year",
-            "Opening balance of cash and cash equivalents"
+        open_1, open_2, open_src, open_page = find_target_row_values([
+            ["cash", "april"], ["beginning", "year"], ["opening", "cash"], ["asatapril"]
         ])
-        close_1, close_2, close_src, close_page = find_target_line_values([
-            "Cash and cash equivalents as at March 31st, 2019",
-            "Cash and cash equivalents as at March 31",
-            "Cash and cash equivalents at end of year",
-            "Closing balance of cash and cash equivalents"
+        close_1, close_2, close_src, close_page = find_target_row_values([
+            ["cash", "march"], ["closing", "cash"], ["asatmarch"]
         ])
 
         summary_fields["operating_cash_flow"] = ExtractedField(value=ocf_1, confidence=0.98, source_text=f"{ocf_src}: {ocf_1}", page_number=ocf_page, is_missing=ocf_1 is None)
         summary_fields["investing_cash_flow"] = ExtractedField(value=icf_1, confidence=0.98, source_text=f"{icf_src}: {icf_1}", page_number=icf_page, is_missing=icf_1 is None)
         summary_fields["financing_cash_flow"] = ExtractedField(value=fcf_1, confidence=0.98, source_text=f"{fcf_src}: {fcf_1}", page_number=fcf_page, is_missing=fcf_1 is None)
-        summary_fields["foreign_exchange_adjustment"] = ExtractedField(value=fx_1, confidence=0.95, source_text=f"{fx_src}: {fx_1}", page_number=fx_page, is_missing=False)
+        summary_fields["foreign_exchange_adjustment"] = ExtractedField(value=fx_1, confidence=0.95, source_text=f"{fx_src}: {fx_1}", page_number=fx_page, is_missing=fx_1 is None)
+        if amal_p1 is not None:
+            summary_fields["other_adjustments"] = ExtractedField(value=amal_p1, confidence=0.95, source_text=f"{amal_src}: {amal_p1}", page_number=amal_page, is_missing=False)
         summary_fields["net_increase_in_cash"] = ExtractedField(value=net_inc_1, confidence=0.99, source_text=f"{net_src}: {net_inc_1}", page_number=net_page, is_missing=net_inc_1 is None)
         summary_fields["opening_cash_balance"] = ExtractedField(value=open_1, confidence=0.98, source_text=f"{open_src}: {open_1}", page_number=open_page, is_missing=open_1 is None)
         summary_fields["closing_cash_balance"] = ExtractedField(value=close_1, confidence=0.99, source_text=f"{close_src}: {close_1}", page_number=close_page, is_missing=close_1 is None)
@@ -465,6 +509,7 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 "investing_cash_flow": icf_1,
                 "financing_cash_flow": fcf_1,
                 "foreign_exchange_adjustment": fx_1,
+                "other_adjustments": amal_p1,
                 "net_increase_in_cash": net_inc_1,
                 "opening_cash_balance": open_1,
                 "closing_cash_balance": close_1
@@ -477,6 +522,7 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 "investing_cash_flow": icf_2,
                 "financing_cash_flow": fcf_2,
                 "foreign_exchange_adjustment": fx_2,
+                "other_adjustments": amal_p2,
                 "net_increase_in_cash": net_inc_2,
                 "opening_cash_balance": open_2,
                 "closing_cash_balance": close_2
@@ -487,11 +533,8 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     # BALANCE SHEET PARSING
     # -------------------------------------------------------------
     elif doc_type == DocumentType.BALANCE_SHEET:
-        p1 = periods_detected[0] if len(periods_detected) > 0 else "31-Mar-19"
-        p2 = periods_detected[1] if len(periods_detected) > 1 else "31-Mar-18"
-
-        tot_a1, tot_a2, a_src, a_page = find_target_line_values(["TOTAL ASSETS", "TOTAL"])
-        tot_l1, tot_l2, l_src, l_page = find_target_line_values(["TOTAL CAPITAL AND LIABILITIES", "TOTAL CAPITAL & LIABILITIES", "TOTAL LIABILITIES", "TOTAL"])
+        tot_a1, tot_a2, a_src, a_page = find_target_row_values([["total", "assets"], ["totalassets"]])
+        tot_l1, tot_l2, l_src, l_page = find_target_row_values([["total", "capital"], ["total", "liabilities"], ["capital", "liabilities"]])
 
         if tot_a1 is None and tot_l1 is not None:
             tot_a1 = tot_l1
@@ -510,21 +553,17 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     # PROFIT & LOSS PARSING
     # -------------------------------------------------------------
     elif doc_type == DocumentType.PROFIT_AND_LOSS:
-        p1 = periods_detected[0] if len(periods_detected) > 0 else "31-Mar-19"
-        p2 = periods_detected[1] if len(periods_detected) > 1 else "31-Mar-18"
-
-        # Search for Interest earned, Other income, Total Income, Interest Expended, Operating expenses, Provisions, Total Expenditure, Net Profit
-        ie1, ie2, ie_src, ie_page = find_target_line_values(["Interest earned", "Interest Earned", "I. Interest earned"])
-        oi1, oi2, oi_src, oi_page = find_target_line_values(["Other income", "Other Income", "II. Other income"])
-        inc1, inc2, inc_src, inc_page = find_target_line_values(["TOTAL INCOME", "I. Total Income", "Total"])
+        ie1, ie2, ie_src, ie_page = find_target_row_values([["interest", "earned"], ["interestearned"]])
+        oi1, oi2, oi_src, oi_page = find_target_row_values([["other", "income"], ["otherincome"]])
+        inc1, inc2, inc_src, inc_page = find_target_row_values([["total", "income"], ["totalincome"]])
         
-        ix1, ix2, ix_src, ix_page = find_target_line_values(["Interest expended", "Interest Expended", "15"])
-        ox1, ox2, ox_src, ox_page = find_target_line_values(["Operating expenses", "Operating Expenses", "16"])
-        pr1, pr2, pr_src, pr_page = find_target_line_values(["Provisions and contingencies", "Provisions & contingencies"])
-        exp1, exp2, exp_src, exp_page = find_target_line_values(["TOTAL EXPENDITURE", "II. Total Expenditure", "TOTAL EXPENSES", "Total"])
+        ix1, ix2, ix_src, ix_page = find_target_row_values([["interest", "expended"], ["interestexpended"]])
+        ox1, ox2, ox_src, ox_page = find_target_row_values([["operating", "expenses"], ["operatingexpenses"]])
+        pr1, pr2, pr_src, pr_page = find_target_row_values([["provisions", "contingencies"], ["provisions"]])
+        exp1, exp2, exp_src, exp_page = find_target_row_values([["total", "expenditure"], ["total", "expenses"], ["totalexpenditure"]])
         
-        pbt1, pbt2, pbt_src, pbt_page = find_target_line_values(["Net profit for the year", "Net Profit for the year before Minority Interest", "Net Profit for the year"])
-        grp1, grp2, grp_src, grp_page = find_target_line_values(["Consolidated Net Profit attributable to Group", "Net Profit attributable to Group", "Net profit for the year"])
+        pbt1, pbt2, pbt_src, pbt_page = find_target_row_values([["net", "profit", "year"], ["before", "minority"]])
+        grp1, grp2, grp_src, grp_page = find_target_row_values([["attributable", "group"], ["netprofitattributable"]])
 
         summary_fields["interest_earned"] = ExtractedField(value=ie1, confidence=0.98, source_text=f"{ie_src}: {ie1}", page_number=ie_page, is_missing=ie1 is None)
         summary_fields["other_income"] = ExtractedField(value=oi1, confidence=0.98, source_text=f"{oi_src}: {oi1}", page_number=oi_page, is_missing=oi1 is None)
@@ -571,13 +610,13 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
     # INVOICE PARSING
     # -------------------------------------------------------------
     elif doc_type == DocumentType.INVOICE:
-        # Detect invoice/receipt number e.g. 050100035279 or INV-...
         inv_match = re.search(r'(?:invoice|receipt|no|mb)[:\s#]*([A-Za-z0-9\-]+)', full_text, re.IGNORECASE)
         inv_no = inv_match.group(1) if inv_match else "REC-01"
 
-        tot_val, _, tot_src, _ = find_target_line_values(["TOTAL AMT.", "TOTAL AMOUNT", "TOTAL DUE", "TOTAL", "RH", "RM", "Net Total"], skip_small_integers=False)
-        cash_val, _, cash_src, _ = find_target_line_values(["CASH.", "CASH PAID", "AMOUNT PAID", "CASH"], skip_small_integers=False)
-        chg_val, _, chg_src, _ = find_target_line_values(["CHANGE.", "CHANGE DUE", "BALANCE DUE", "CHANGE"], skip_small_integers=False)
+        tot_val, _, tot_src, _ = find_target_row_values([["total", "amount"], ["total", "due"], ["totalamt"], ["nettotal"], ["total"]])
+        cash_val, _, cash_src, _ = find_target_row_values([["cash", "paid"], ["amount", "paid"], ["cashpaid"], ["cash"]])
+        chg_val, _, chg_src, _ = find_target_row_values([["change", "due"], ["balancedue"], ["changedue"], ["change"]])
+
 
         summary_fields["invoice_number"] = ExtractedField(value=inv_no, confidence=0.95, source_text=inv_no, page_number=1)
         summary_fields["total_amount"] = ExtractedField(value=tot_val, confidence=0.98, source_text=f"{tot_src}: {tot_val}", page_number=1, is_missing=tot_val is None)
@@ -595,5 +634,6 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         periods_detected=periods_detected,
         currency=currency,
         unit=unit,
-        notes=["Extracted via RapidOCR document parser."]
+        notes=["Extracted via RapidOCR 2D financial parser."]
     )
+

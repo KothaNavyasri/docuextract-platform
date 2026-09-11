@@ -36,13 +36,18 @@ class ExtractedField(BaseModel):
     is_missing: bool = False
 
 class LineItem(BaseModel):
+    label: Optional[str] = None
     item_description: Optional[str] = None
+    values: Optional[Dict[str, Optional[float]]] = None
     quantity: Optional[float] = None
     unit_price: Optional[float] = None
     line_total: Optional[float] = None
     tax_rate: Optional[float] = None
     raw_text: Optional[str] = None
+    evidence: Optional[str] = None
     page_number: Optional[int] = 1
+    confidence: Optional[float] = 0.95
+
 
 class ExtractedData(BaseModel):
     statement_title: Optional[str] = None

@@ -1,0 +1,199 @@
+{
+  "id": 19,
+  "document_name": "Consolidated Cash Flow Statement 2019.pdf",
+  "document_type": "cash_flow_statement",
+  "processing_status": "VALIDATION_PASSED",
+  "file_validation": {
+    "is_valid": true,
+    "filename": "Consolidated Cash Flow Statement 2019.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 249837,
+    "page_count": 2,
+    "is_scanned": true,
+    "errors": []
+  },
+  "extracted_data": {
+    "statement_title": "CONSOLIDATED CASHFLOW STATEMENT",
+    "reporting_period": "March 31, 2019",
+    "summary_fields": {
+      "operating_cash_flow": {
+        "value": -628715447.0,
+        "confidence": 0.98,
+        "source_text": "Net cash flow (used in) / from operating activities: -628715447.0",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "investing_cash_flow": {
+        "value": -15984087.0,
+        "confidence": 0.98,
+        "source_text": "Net cash flow used in investing activities: -15984087.0",
+        "page_number": 1,
+        "is_missing": false
+      },
+      "financing_cash_flow": {
+        "value": 231306932.0,
+        "confidence": 0.98,
+        "source_text": "Net cash flow from financing activities: 231306932.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "foreign_exchange_adjustment": {
+        "value": 953463.0,
+        "confidence": 0.95,
+        "source_text": "Effect of exchange fluctuation on translation reserve: 953463.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "net_increase_in_cash": {
+        "value": -412439139.0,
+        "confidence": 0.99,
+        "source_text": "Net increase / (decrease) in cash and cash equivalents: -412439139.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "opening_cash_balance": {
+        "value": 1230615562.0,
+        "confidence": 0.98,
+        "source_text": "Cash and cash equivalents as at April 1st, 2018: 1230615562.0",
+        "page_number": 2,
+        "is_missing": false
+      },
+      "closing_cash_balance": {
+        "value": 818176423.0,
+        "confidence": 0.99,
+        "source_text": "Cash and cash equivalents as at March 31st, 2019: 818176423.0",
+        "page_number": 2,
+        "is_missing": false
+      }
+    },
+    "tables": {
+      "cash_flow_periods": [
+        {
+          "period": "31-Mar-19",
+          "operating_cash_flow": -628715447.0,
+          "investing_cash_flow": -15984087.0,
+          "financing_cash_flow": 231306932.0,
+          "foreign_exchange_adjustment": 953463.0,
+          "net_increase_in_cash": -412439139.0,
+          "opening_cash_balance": 1230615562.0,
+          "closing_cash_balance": 818176423.0
+        },
+        {
+          "period": "31-Mar-18",
+          "operating_cash_flow": 172143764.0,
+          "investing_cash_flow": -8521873.0,
+          "financing_cash_flow": 573776603.0,
+          "foreign_exchange_adjustment": 105872.0,
+          "net_increase_in_cash": 737504366.0,
+          "opening_cash_balance": 493111196.0,
+          "closing_cash_balance": 1230615562.0
+        }
+      ]
+    },
+    "line_items": null,
+    "raw_text_by_page": {
+      "1": "CONSOLIDATED CASHFLOW STATEMENT\nFor the year ended March 31, 2019\n# in \u201c000\nYear ended\nYear ended\n31-Mar-19\n31-Mar-18\nCash flows from operating activities\nConsolidated profit before income tax\n342,049,793\n284,131,068\nAdjustments for:\nDepreciation on fixed assets\n12,206,675\n9,667,819\n(Profit) / loss on revaluation of investments\n152,437\n1,570,448\nAmortisation of premia on held to maturity investments\n4,534,626\n3,599,102\n(62,054)\n(Profit) / loss on sale of fixed assets\n11,833\n74,186,708\nProvision / charge for non performing assets\n57,553,339\n47,066\nProvision for dimunition in value of investments\n308,075\nProvision for standard assets\n6,861,413\n6,575,746\n4,991,092\nContingency provisions\n3,961,191\nShare in current year's profits of associates\n(5,221)\n444,967,756\n367,373,400\nAdjustments for:\n(489,301,670)\n(282,310,524)\n(Increase) / decrease in advances\n(1,766,074,976)\n(1,203,053,719)\nIncrease / (decrease) in deposits\n1,341,275,360\n1,452,408,940\n(122,449,924)\n(Increase) / decrease in other assets\n52,336,433\nIncrease / (decrease) in other liabilities and provisions\n87,851,107\n(114,511,772)\n(503,732,347)\n272,242,758\n(124,983,100)\nDirect taxes paid (net of refunds)\n(100,098,994)\nNet cash flow (used in) / from operating activities\n(628,715,447)\n172,143,764\nCash flows used in investing activities\nPurchase of fixed assets\n(16,206,124)\n(8,477,746)\nProceeds from sale of fixed assets\n222,037\n99,204\nInvestment in subsidiaries and / or joint ventures\n(143,331)\nNet cash flow used in investing activities\n(15,984,087)\n(8,521,873)\nHDFC Bank Limited Annual Report 2018 -2019\n188",
+      "2": "CONSOLIDATED CASHFLOW STATEMENT\nFor the year ended March 31, 2019\n? in \"000\nYear ended\nYear ended\n31-Mar-19\n31-Mar-18\nCash flows from financing activities\nIncrease in minority interest\n1,454,623\n666,553\nProceeds from issue of equity shares under preferential allotment\n84,999,999\n150,896,153\nDepository Receipt offering (net of issue expenses)\nMoney received on exercise of stock options by employees\n22,008,150\n27,259,098\nIncrease / (decrease) in borrowings (excluding subordinate debt, perpetual debt and\n32,656,942\n498,214,409\nupper Tier Il instruments)\nProceeds from issue of Additional Tier I and Tier Il Capital Bonds\n9,000,000\n102,800,000\nRedemption of subordinated debt\n(28,750,000)\n(20,750,000)\nDividend paid during the year\n(33,842,896)\n(28,312,716)\nTax on dividend paid during the year\n(7,116,039)\n(6,100,741)\nNet cash flow from financing activities\n231,306,932\n573,776,603\n953,463\nEffect of exchange fluctuation on translation reserve\n105,872\nNet increase / (decrease) in cash and cash equivalents\n(412,439,139)\n737,504,366\nCash and cash equivalents as at April 1st, 2018\n1,230,615,562\n493,111,196\nCash and cash equivalents as at March 31st, 2019\n818,176,423\n1,230,615,562\nAs per our report of even date.\nFor and on behalf of the Board\nShyamala Gopinath\nAditya Puri\nFor S. R. BATLIBOI & CO. LLP\nKeki Mistry\nChartered Accountants\nManaging Director\nChairperson\nMalay Patel\nFirm Registration No. 301003E/E300005\nUmesh Sarangi\nSanjiv Sachar\nper Sudhir Soni\nKaizad Bharucha\nPartner\nSandeep Parekh\nExecutiveDirector\nMembership No.: 41870\nM D Ranganath\nDirectors\nSantosh Haldankar\nSashidhar Jagdishan\nVice President (Legal)\nChief FinancialOfficer\nMumbai, April 20, 2019\n& Company Secretary\nHDFC BANK\n25\n189\nYEARS"
+    },
+    "periods_detected": [
+      "31-Mar-19",
+      "31-Mar-18"
+    ],
+    "currency": "INR",
+    "unit": "\u20b9 in '000",
+    "notes": [
+      "Extracted via RapidOCR document parser."
+    ]
+  },
+  "validation": {
+    "overall_status": "PASS",
+    "passed_count": 4,
+    "failed_count": 0,
+    "not_applicable_count": 0,
+    "total_checks": 4,
+    "checks": [
+      {
+        "check_id": "CF_NET_INCREASE_31-Mar-19",
+        "formula_name": "Net Increase in Cash Reconciliation (31-Mar-19)",
+        "formula_description": "Operating (-628,715,447) + Investing (-15,984,087) + Financing (231,306,932) + FX (953,463) \u2248 Net Increase (-412,439,139)",
+        "operands": {
+          "period": "31-Mar-19",
+          "operating_cash_flow": -628715447.0,
+          "investing_cash_flow": -15984087.0,
+          "financing_cash_flow": 231306932.0,
+          "fx_adjustment": 953463.0,
+          "reported_net_increase": -412439139.0
+        },
+        "calculated_value": -412439139.0,
+        "reported_value": -412439139.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value -412,439,139.00 matches reported value -412,439,139.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_CLOSING_CASH_31-Mar-19",
+        "formula_name": "Closing Cash Balance Reconciliation (31-Mar-19)",
+        "formula_description": "Opening Cash (1,230,615,562) + Net Increase (-412,439,139) \u2248 Closing Cash (818,176,423)",
+        "operands": {
+          "period": "31-Mar-19",
+          "opening_cash": 1230615562.0,
+          "net_increase": -412439139.0,
+          "adjustments": 0.0,
+          "reported_closing_cash": 818176423.0
+        },
+        "calculated_value": 818176423.0,
+        "reported_value": 818176423.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 818,176,423.00 matches reported value 818,176,423.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_NET_INCREASE_31-Mar-18",
+        "formula_name": "Net Increase in Cash Reconciliation (31-Mar-18)",
+        "formula_description": "Operating (172,143,764) + Investing (-8,521,873) + Financing (573,776,603) + FX (105,872) \u2248 Net Increase (737,504,366)",
+        "operands": {
+          "period": "31-Mar-18",
+          "operating_cash_flow": 172143764.0,
+          "investing_cash_flow": -8521873.0,
+          "financing_cash_flow": 573776603.0,
+          "fx_adjustment": 105872.0,
+          "reported_net_increase": 737504366.0
+        },
+        "calculated_value": 737504366.0,
+        "reported_value": 737504366.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 737,504,366.00 matches reported value 737,504,366.00 (Variance: 0.00 <= 1.0)."
+      },
+      {
+        "check_id": "CF_CLOSING_CASH_31-Mar-18",
+        "formula_name": "Closing Cash Balance Reconciliation (31-Mar-18)",
+        "formula_description": "Opening Cash (493,111,196) + Net Increase (737,504,366) \u2248 Closing Cash (1,230,615,562)",
+        "operands": {
+          "period": "31-Mar-18",
+          "opening_cash": 493111196.0,
+          "net_increase": 737504366.0,
+          "adjustments": 0.0,
+          "reported_closing_cash": 1230615562.0
+        },
+        "calculated_value": 1230615562.0,
+        "reported_value": 1230615562.0,
+        "variance": 0.0,
+        "status": "PASS",
+        "tolerance": 1.0,
+        "explanation": "PASSED: Calculated value 1,230,615,562.00 matches reported value 1,230,615,562.00 (Variance: 0.00 <= 1.0)."
+      }
+    ]
+  },
+  "processing_metadata": {
+    "extracted_at": "2026-09-11T10:29:44.957599Z",
+    "processing_duration_ms": 12549.74,
+    "ocr_engine": "RapidOCR ONNX Engine",
+    "ai_model": "Deterministic Financial Parser v2.0",
+    "pages_processed": 2,
+    "file_hash": "bc8f7ef0345d27e8c2da377a44c81fc0147a5097d72a51b81ac32aeb9f601864"
+  }
+}

@@ -132,7 +132,21 @@ document.addEventListener("DOMContentLoaded", () => {
     previewFilesize.textContent = formatBytes(file.size);
     filePreview.classList.add("active");
     processBtn.disabled = false;
+
+    // Auto-select document type hint based on filename if helpful
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.includes("cash flow") || lowerName.includes("cashflow")) {
+      docTypeSelect.value = "cash_flow_statement";
+    } else if (lowerName.includes("balance sheet") || lowerName.includes("balancesheet")) {
+      docTypeSelect.value = "balance_sheet";
+    } else if (lowerName.includes("profit") || lowerName.includes("pnl") || lowerName.includes("loss")) {
+      docTypeSelect.value = "profit_and_loss";
+    } else if (lowerName.includes("invoice") || lowerName.includes("receipt") || lowerName.includes("bill")) {
+      docTypeSelect.value = "invoice";
+    }
   }
+
+
 
   removeFileBtn.addEventListener("click", () => {
     state.selectedFile = null;
@@ -317,14 +331,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const lineItems = doc.extracted_data.line_items || [];
     const tables = doc.extracted_data.tables || {};
 
-    if (lineItems.length > 0) {
+    if (lineItems.length > 0 && lineItems[0].values) {
+      tablesCard.style.display = "block";
+      const detectedPeriods = doc.extracted_data.periods_detected || [];
+      const periodCols = detectedPeriods.length > 0 ? detectedPeriods : Object.keys(lineItems[0].values);
+
+      let theadHtml = "<tr><th>#</th><th>Financial Line Item</th>";
+      periodCols.forEach(p => { theadHtml += `<th>${p}</th>`; });
+      theadHtml += "<th>Source Page</th><th>Confidence</th></tr>";
+
+      let rowsHtml = "";
+      lineItems.forEach((item, idx) => {
+        rowsHtml += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${item.label || item.item_description || 'N/A'}</strong></td>
+        `;
+        periodCols.forEach(p => {
+          const val = item.values ? item.values[p] : null;
+          rowsHtml += `<td>${val !== null && val !== undefined ? formatValue(val) : '-'}</td>`;
+        });
+        rowsHtml += `
+            <td>Page ${item.page_number || 1}</td>
+            <td><span class="pill pill-neutral" style="font-size: 0.7rem;">${Math.round((item.confidence || 0.98) * 100)}%</span></td>
+          </tr>
+        `;
+      });
+
+      tablesContainer.innerHTML = `
+        <div class="table-responsive">
+          <table>
+            <thead>${theadHtml}</thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    } else if (lineItems.length > 0) {
       tablesCard.style.display = "block";
       let rowsHtml = "";
       lineItems.forEach((item, idx) => {
         rowsHtml += `
           <tr>
             <td>${idx + 1}</td>
-            <td><strong>${item.item_description || 'N/A'}</strong></td>
+            <td><strong>${item.item_description || item.label || 'N/A'}</strong></td>
             <td>${item.quantity !== null ? item.quantity : '-'}</td>
             <td>${item.unit_price !== null ? formatValue(item.unit_price) : '-'}</td>
             <td><strong>${item.line_total !== null ? formatValue(item.line_total) : '-'}</strong></td>
@@ -381,6 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       tablesCard.style.display = "none";
     }
+
 
     // 4. Raw JSON Payload
     rawJsonViewer.textContent = JSON.stringify(doc, null, 2);

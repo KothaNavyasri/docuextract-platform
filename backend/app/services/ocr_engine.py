@@ -19,7 +19,7 @@ def get_ocr_engine():
     return _ocr_engine
 
 def run_ocr_on_image(img_bytes: bytes) -> str:
-    """Runs RapidOCR on image bytes and returns concatenated text lines."""
+    """Runs RapidOCR on image bytes and returns 2D coordinate-reconstructed text lines."""
     engine = get_ocr_engine()
     if not engine:
         return ""
@@ -27,11 +27,43 @@ def run_ocr_on_image(img_bytes: bytes) -> str:
         results, elapse = engine(img_bytes)
         if not results:
             return ""
-        lines = [r[1] for r in results if r and len(r) > 1 and r[1]]
-        return "\n".join(lines)
+            
+        boxes = []
+        for r in results:
+            if not r or len(r) < 2 or not r[1]:
+                continue
+            box, text = r[0], r[1]
+            score = r[2] if len(r) > 2 else 0.95
+            y_center = (box[0][1] + box[2][1]) / 2.0
+            x_min = box[0][0]
+            boxes.append({"y": y_center, "x": x_min, "text": text, "score": score})
+            
+        boxes.sort(key=lambda b: b["y"])
+        rows = []
+        for b in boxes:
+            matched_row = None
+            for row in rows:
+                if abs(row["y"] - b["y"]) <= 14:
+                    matched_row = row
+                    break
+            if matched_row:
+                matched_row["items"].append(b)
+                matched_row["y"] = sum(it["y"] for it in matched_row["items"]) / len(matched_row["items"])
+            else:
+                rows.append({"y": b["y"], "items": [b]})
+                
+        rows.sort(key=lambda r: r["y"])
+        reconstructed_lines = []
+        for r in rows:
+            r["items"].sort(key=lambda it: it["x"])
+            line_str = " | ".join(it["text"] for it in r["items"])
+            reconstructed_lines.append(line_str)
+            
+        return "\n".join(reconstructed_lines)
     except Exception as e:
         logger.error(f"RapidOCR execution failed: {e}")
         return ""
+
 
 def extract_pages_as_images_and_text(content: bytes, filename: str) -> Tuple[List[Image.Image], Dict[int, str]]:
     """

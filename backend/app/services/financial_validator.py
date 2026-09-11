@@ -361,26 +361,26 @@ def validate_cash_flow(extracted: ExtractedData) -> List[ValidationCheck]:
             closing = to_float(row.get("closing_cash_balance"))
             adjustments = to_float(row.get("other_adjustments")) or 0.0
             
-            # Rule 1: Operating Cash Flow + Investing Cash Flow + Financing Cash Flow + FX/Translation Adjustment ≈ Net Increase in Cash
+            # Rule 1: Operating Cash Flow + Investing Cash Flow + Financing Cash Flow + FX/Translation Adjustment + Other Adjustments ≈ Net Increase in Cash
             calc_net = None
             if ocf is not None and icf is not None and fcf is not None:
-                calc_net = ocf + icf + fcf + fx
+                calc_net = ocf + icf + fcf + fx + adjustments
                 
             checks.append(check_equality(
                 check_id=f"CF_NET_INCREASE_{period}",
                 formula_name=f"Net Increase in Cash Reconciliation ({period})",
-                formula_description=f"Operating ({ocf or 0:,.0f}) + Investing ({icf or 0:,.0f}) + Financing ({fcf or 0:,.0f}) + FX ({fx or 0:,.0f}) ≈ Net Increase ({net_inc or 0:,.0f})",
+                formula_description=f"Operating ({ocf or 0:,.0f}) + Investing ({icf or 0:,.0f}) + Financing ({fcf or 0:,.0f}) + FX ({fx or 0:,.0f}) + Adjustments ({adjustments or 0:,.0f}) ≈ Net Increase ({net_inc or 0:,.0f})",
                 calculated_value=calc_net,
                 reported_value=net_inc,
-                operands={"period": period, "operating_cash_flow": ocf, "investing_cash_flow": icf, "financing_cash_flow": fcf, "fx_adjustment": fx, "reported_net_increase": net_inc},
+                operands={"period": period, "operating_cash_flow": ocf, "investing_cash_flow": icf, "financing_cash_flow": fcf, "fx_adjustment": fx, "other_adjustments": adjustments, "reported_net_increase": net_inc},
                 not_applicable_reason="One or more cash flow activity totals missing."
             ))
             
-            # Rule 2: Opening Cash + Net Increase in Cash + applicable adjustments ≈ Closing Cash
+            # Rule 2: Opening Cash + Net Increase in Cash ≈ Closing Cash
             calc_closing = None
             effective_net = net_inc if net_inc is not None else calc_net
             if opening is not None and effective_net is not None:
-                calc_closing = opening + effective_net + adjustments
+                calc_closing = opening + effective_net
                 
             checks.append(check_equality(
                 check_id=f"CF_CLOSING_CASH_{period}",
@@ -388,9 +388,10 @@ def validate_cash_flow(extracted: ExtractedData) -> List[ValidationCheck]:
                 formula_description=f"Opening Cash ({opening or 0:,.0f}) + Net Increase ({effective_net or 0:,.0f}) ≈ Closing Cash ({closing or 0:,.0f})",
                 calculated_value=calc_closing,
                 reported_value=closing,
-                operands={"period": period, "opening_cash": opening, "net_increase": effective_net, "adjustments": adjustments, "reported_closing_cash": closing},
+                operands={"period": period, "opening_cash": opening, "net_increase": effective_net, "reported_closing_cash": closing},
                 not_applicable_reason="Opening or closing cash balances missing."
             ))
+
     else:
         fields = extracted.summary_fields
         ocf = to_float(fields.get("operating_cash_flow"))
