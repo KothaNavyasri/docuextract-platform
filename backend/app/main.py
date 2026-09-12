@@ -22,10 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="""
-# Intelligent Document Extraction, Validation & API Platform
-REST API for high-precision financial document extraction (Invoices, Balance Sheets, Profit & Loss, Cash Flow Statements), multimodal OCR, deterministic financial validation, and persistent storage.
-    """,
+    description="REST API for high-precision financial document extraction (Invoices, Balance Sheets, Profit & Loss, Cash Flow Statements), multimodal OCR, deterministic financial validation, and persistent storage.",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
