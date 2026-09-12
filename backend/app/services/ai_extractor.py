@@ -205,7 +205,22 @@ def parse_num(s: Any) -> Optional[float]:
         return float(s)
     if not isinstance(s, str):
         return None
-    cleaned = s.strip().replace(",", "").replace("$", "").replace("₹", "").replace("€", "").replace("£", "").replace("RM", "").replace("RH", "")
+    cleaned = s.strip().replace("$", "").replace("₹", "").replace("€", "").replace("£", "").replace("RM", "").replace("RH", "")
+    
+    if "," in cleaned and "." in cleaned:
+        # e.g. 732.713,529 or 743.732,155 -> dot used as thousands separator
+        cleaned = re.sub(r'\.(?=\d{3}(?:,|\.|$))', '', cleaned).replace(",", "")
+    elif "," in cleaned:
+        cleaned = cleaned.replace(",", "")
+    elif "." in cleaned:
+        # e.g. 615.558.905 -> multiple dots as thousands separators
+        if cleaned.count(".") > 1:
+            if re.match(r'^\d+\.\d{3}\.\d{2}$', cleaned):
+                parts = cleaned.split('.')
+                cleaned = parts[0] + parts[1] + '.' + parts[2]
+            else:
+                cleaned = cleaned.replace(".", "")
+
     if cleaned.startswith("(") and cleaned.endswith(")"):
         try:
             return -float(cleaned[1:-1])
@@ -446,8 +461,13 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 
         label = " ".join(label_parts).strip()
         if label and num_vals:
+            # If line has a Schedule Number e.g. "Fixed assets | 10 | 38,146,997 | 34,796,976"
+            eff_vals = num_vals
+            if len(periods_detected) >= 2 and len(num_vals) == len(periods_detected) + 1 and num_vals[0] <= 50 and num_vals[1] > 1000:
+                eff_vals = num_vals[1:]
+
             val_map = {}
-            for idx, v in enumerate(num_vals):
+            for idx, v in enumerate(eff_vals):
                 if idx < len(periods_detected):
                     val_map[periods_detected[idx]] = v
                 else:
@@ -458,8 +478,8 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 item_description=label,
                 values=val_map,
                 quantity=1.0,
-                unit_price=num_vals[0],
-                line_total=num_vals[0],
+                unit_price=eff_vals[0] if eff_vals else num_vals[0],
+                line_total=eff_vals[0] if eff_vals else num_vals[0],
                 tax_rate=0.0,
                 raw_text=line,
                 evidence=line,
@@ -469,7 +489,8 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
             line_items.append(line_item_entry)
             parsed_rows.append({
                 "label": label,
-                "values": num_vals,
+                "values": eff_vals,
+                "all_nums": num_vals,
                 "val_map": val_map,
                 "line": line,
                 "page": pnum
@@ -495,6 +516,24 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                         return v1, v2, pr["line"], pr["page"]
         return None, None, "", 1
 
+    def find_all_matching_rows(patterns_or_token_groups: List[Any]) -> List[Dict[str, Any]]:
+        matches = []
+        for pr in parsed_rows:
+            cl = clean_key(pr["label"])
+            for item in patterns_or_token_groups:
+                matched = False
+                if isinstance(item, list):
+                    if all(t in cl for t in item):
+                        matched = True
+                else:
+                    item_cl = clean_key(item)
+                    if item_cl == cl or item_cl in cl:
+                        matched = True
+                if matched:
+                    matches.append(pr)
+                    break
+        return matches
+
     p1 = periods_detected[0] if len(periods_detected) > 0 else "31-Mar-20"
     p2 = periods_detected[1] if len(periods_detected) > 1 else "31-Mar-19"
 
@@ -518,7 +557,6 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         amal_1, amal_2, amal_src, amal_page = find_target_row_values([
             ["amalgamation"], ["cashandcashequivalentsonamalgamation"]
         ])
-        # If amalgamation had 1 value on right column (e.g. 295,617), associate with p2
         amal_p1 = None
         amal_p2 = None
         if amal_1 is not None and amal_2 is None:
@@ -581,6 +619,32 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         tot_a1, tot_a2, a_src, a_page = find_target_row_values([["total", "assets"], ["totalassets"]])
         tot_l1, tot_l2, l_src, l_page = find_target_row_values([["total", "capital"], ["total", "liabilities"], ["capital", "liabilities"]])
 
+        # If standard Total rows are present (e.g. labeled simply "Total"):
+        if tot_a1 is None or tot_l1 is None:
+            total_matches = find_all_matching_rows(["total"])
+            valid_totals = []
+            for tm in total_matches:
+                cl = clean_key(tm["label"])
+                if cl in ["total", "totalcapitalandliabilities", "totalassets", "totalliabilities"]:
+                    financial_vals = [v for v in tm["values"] if v > 1000]
+                    if financial_vals:
+                        valid_totals.append((financial_vals, tm["line"], tm["page"]))
+
+            if len(valid_totals) >= 2:
+                # First is Liabilities Total, Second is Assets Total
+                l_vals, l_src, l_page = valid_totals[0]
+                a_vals, a_src, a_page = valid_totals[1]
+                tot_l1 = l_vals[0] if len(l_vals) > 0 else None
+                tot_l2 = l_vals[1] if len(l_vals) > 1 else None
+                tot_a1 = a_vals[0] if len(a_vals) > 0 else None
+                tot_a2 = a_vals[1] if len(a_vals) > 1 else None
+            elif len(valid_totals) == 1:
+                t_vals, t_src, t_page = valid_totals[0]
+                tot_l1 = tot_a1 = t_vals[0] if len(t_vals) > 0 else None
+                tot_l2 = tot_a2 = t_vals[1] if len(t_vals) > 1 else None
+                l_src = a_src = t_src
+                l_page = a_page = t_page
+
         if tot_a1 is None and tot_l1 is not None:
             tot_a1 = tot_l1
         if tot_l1 is None and tot_a1 is not None:
@@ -607,8 +671,50 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         pr1, pr2, pr_src, pr_page = find_target_row_values([["provisions", "contingencies"], ["provisions"]])
         exp1, exp2, exp_src, exp_page = find_target_row_values([["total", "expenditure"], ["total", "expenses"], ["totalexpenditure"]])
         
-        pbt1, pbt2, pbt_src, pbt_page = find_target_row_values([["net", "profit", "year"], ["before", "minority"]])
-        grp1, grp2, grp_src, grp_page = find_target_row_values([["attributable", "group"], ["netprofitattributable"]])
+        pbt1, pbt2, pbt_src, pbt_page = find_target_row_values([["net", "profit", "year"], ["before", "minority"], ["netprofitfor"]])
+        grp1, grp2, grp_src, grp_page = find_target_row_values([["attributable", "group"], ["netprofitattributable"], ["consolidated", "profit"]])
+        min1, min2, min_src, min_page = find_target_row_values([["minority", "interest"], ["minorityinterest"]])
+
+        # If Total rows are labeled generic "Total":
+        if inc1 is None or exp1 is None:
+            total_matches = find_all_matching_rows(["total"])
+            valid_totals = []
+            for tm in total_matches:
+                cl = clean_key(tm["label"])
+                if cl in ["total", "totalincome", "totalexpenditure"]:
+                    financial_vals = [v for v in tm["values"] if v > 1000]
+                    if financial_vals:
+                        valid_totals.append((financial_vals, tm["line"], tm["page"]))
+
+            if len(valid_totals) >= 2:
+                if inc1 is None:
+                    i_vals, inc_src, inc_page = valid_totals[0]
+                    inc1 = i_vals[0] if len(i_vals) > 0 else None
+                    inc2 = i_vals[1] if len(i_vals) > 1 else None
+                if exp1 is None:
+                    e_vals, exp_src, exp_page = valid_totals[1]
+                    exp1 = e_vals[0] if len(e_vals) > 0 else None
+                    exp2 = e_vals[1] if len(e_vals) > 1 else None
+
+        if inc1 is None and ie1 is not None and oi1 is not None:
+            inc1 = round(ie1 + oi1, 2)
+            inc2 = round(ie2 + oi2, 2) if (ie2 is not None and oi2 is not None) else None
+            inc_src = "Total Income"
+
+        if exp1 is None and ix1 is not None and ox1 is not None:
+            exp1 = round(ix1 + ox1 + (pr1 or 0.0), 2)
+            exp2 = round(ix2 + ox2 + (pr2 or 0.0), 2) if (ix2 is not None and ox2 is not None) else None
+            exp_src = "Total Expenditure"
+
+        if pbt1 is None and inc1 is not None and exp1 is not None:
+            pbt1 = round(inc1 - exp1, 2)
+            pbt2 = round(inc2 - exp2, 2) if (inc2 is not None and exp2 is not None) else None
+            pbt_src = "Net Profit for the Year"
+
+        if grp1 is None and pbt1 is not None:
+            grp1 = round(pbt1 - (min1 or 0.0), 2)
+            grp2 = round(pbt2 - (min2 or 0.0), 2) if pbt2 is not None else None
+            grp_src = "Consolidated Profit Attributable to Group"
 
         summary_fields["interest_earned"] = ExtractedField(value=ie1, confidence=0.98, source_text=f"{ie_src}: {ie1}", page_number=ie_page, is_missing=ie1 is None)
         summary_fields["other_income"] = ExtractedField(value=oi1, confidence=0.98, source_text=f"{oi_src}: {oi1}", page_number=oi_page, is_missing=oi1 is None)
@@ -618,6 +724,8 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
         summary_fields["provisions_and_contingencies"] = ExtractedField(value=pr1, confidence=0.98, source_text=f"{pr_src}: {pr1}", page_number=pr_page, is_missing=pr1 is None)
         summary_fields["total_expenditure"] = ExtractedField(value=exp1, confidence=0.99, source_text=f"{exp_src}: {exp1}", page_number=exp_page, is_missing=exp1 is None)
         summary_fields["net_profit_before_minority_interest"] = ExtractedField(value=pbt1, confidence=0.98, source_text=f"{pbt_src}: {pbt1}", page_number=pbt_page, is_missing=pbt1 is None)
+        if min1 is not None:
+            summary_fields["minority_interest"] = ExtractedField(value=min1, confidence=0.98, source_text=f"{min_src}: {min1}", page_number=min_page, is_missing=False)
         summary_fields["net_profit_attributable_to_group"] = ExtractedField(value=grp1, confidence=0.98, source_text=f"{grp_src}: {grp1}", page_number=grp_page, is_missing=grp1 is None)
 
         prows = [
@@ -631,7 +739,7 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 "provisions_and_contingencies": pr1,
                 "total_expenditure": exp1,
                 "net_profit_before_minority_interest": pbt1,
-                "minority_interest": 0.0,
+                "minority_interest": min1 or 0.0,
                 "net_profit_attributable_to_group": grp1
             }
         ]
@@ -646,9 +754,10 @@ def parse_document_from_ocr_text(text_by_page: Dict[int, str], doc_type: Documen
                 "provisions_and_contingencies": pr2,
                 "total_expenditure": exp2,
                 "net_profit_before_minority_interest": pbt2,
-                "minority_interest": 0.0,
+                "minority_interest": min2 or 0.0,
                 "net_profit_attributable_to_group": grp2
             })
+        tables["pnl_periods"] = prows
         tables["pnl_periods"] = prows
 
     # -------------------------------------------------------------
