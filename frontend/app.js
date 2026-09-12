@@ -1,8 +1,14 @@
 // Main Application Client Logic
 document.addEventListener("DOMContentLoaded", () => {
-  // State
+  // Determine API base URL (clearing stale frontend origins if saved)
+  let savedUrl = localStorage.getItem("DOCU_API_URL");
+  if (savedUrl && savedUrl.includes("docuextract-frontend")) {
+    localStorage.removeItem("DOCU_API_URL");
+    savedUrl = null;
+  }
+  
   let state = {
-    apiBaseUrl: localStorage.getItem("DOCU_API_URL") || window.APP_CONFIG.API_BASE_URL,
+    apiBaseUrl: savedUrl || window.APP_CONFIG.API_BASE_URL || "https://docuextract-backend-lmts.onrender.com/api/v1",
     selectedFile: null,
     isProcessing: false,
     currentDocument: null,
