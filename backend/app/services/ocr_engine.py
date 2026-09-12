@@ -118,10 +118,16 @@ def extract_pages_as_images_and_text(content: bytes, filename: str) -> Tuple[Lis
         try:
             pil_img = Image.open(io.BytesIO(content))
             pil_img = ImageOps.exif_transpose(pil_img).convert("RGB")
+            
+            # Downscale if excessively large to keep memory under 512MB and processing under 2s
+            max_dim = 1400
+            if max(pil_img.size) > max_dim:
+                pil_img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            
             images.append(pil_img)
             
             buf = io.BytesIO()
-            pil_img.save(buf, format="JPEG")
+            pil_img.save(buf, format="JPEG", quality=85)
             transposed_bytes = buf.getvalue()
             
             # Run OCR on image
