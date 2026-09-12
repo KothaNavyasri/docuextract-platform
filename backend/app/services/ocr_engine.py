@@ -99,8 +99,8 @@ def extract_pages_as_images_and_text(content: bytes, filename: str) -> Tuple[Lis
                 page_num = i + 1
                 native_text = page.get_text("text") or ""
                 
-                # Render to high-DPI image for AI vision / OCR
-                pix = page.get_pixmap(dpi=200)
+                # Render to crisp image for AI vision / OCR (150 DPI is 2x faster and lightweight)
+                pix = page.get_pixmap(dpi=150)
                 png_bytes = pix.tobytes("png")
                 img = Image.open(io.BytesIO(png_bytes)).convert("RGB")
                 images.append(img)
