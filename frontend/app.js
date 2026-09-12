@@ -81,8 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Health Check
   async function checkBackendHealth() {
+    if (state.isProcessing) return; // Don't interrupt while busy processing
     try {
-      const res = await fetch(`${state.apiBaseUrl}/health`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(`${state.apiBaseUrl}/health`, { signal: AbortSignal.timeout(15000) });
       if (res.ok) {
         const data = await res.json();
         backendHealthBadge.innerHTML = `<span class="status-dot"></span><span>API Live (v${data.version || '1.0'})</span>`;
@@ -90,7 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
         backendHealthBadge.innerHTML = `<span class="status-dot offline"></span><span>API Error (${res.status})</span>`;
       }
     } catch (err) {
-      backendHealthBadge.innerHTML = `<span class="status-dot offline"></span><span>API Offline</span>`;
+      if (!state.isProcessing) {
+        backendHealthBadge.innerHTML = `<span class="status-dot offline"></span><span>API Offline</span>`;
+      }
     }
   }
 
