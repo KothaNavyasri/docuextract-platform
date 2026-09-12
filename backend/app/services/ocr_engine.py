@@ -5,17 +5,21 @@ from PIL import Image, ImageOps
 from backend.app.core.logging import logger
 
 _ocr_engine = None
+_ocr_attempted = False
 
 def get_ocr_engine():
-    global _ocr_engine
-    if _ocr_engine is None:
-        try:
-            from rapidocr_onnxruntime import RapidOCR
-            _ocr_engine = RapidOCR()
-            logger.info("RapidOCR ONNX engine initialized successfully.")
-        except Exception as e:
-            logger.warning(f"RapidOCR engine initialization skipped: {e}")
-            _ocr_engine = False
+    global _ocr_engine, _ocr_attempted
+    if _ocr_attempted:
+        return _ocr_engine
+    _ocr_attempted = True
+    try:
+        import urllib.request
+        from rapidocr_onnxruntime import RapidOCR
+        _ocr_engine = RapidOCR()
+        logger.info("RapidOCR ONNX engine initialized successfully.")
+    except Exception as e:
+        logger.warning(f"RapidOCR ONNX engine disabled on cloud instance: {e}")
+        _ocr_engine = False
     return _ocr_engine
 
 def run_ocr_on_image(img_bytes: bytes) -> str:
