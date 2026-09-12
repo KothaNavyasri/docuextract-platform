@@ -69,6 +69,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Root"])
+@app.get(settings.API_V1_STR, tags=["Root"])
 async def root():
     return {
         "name": settings.PROJECT_NAME,
