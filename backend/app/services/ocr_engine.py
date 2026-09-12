@@ -14,24 +14,29 @@ def get_ocr_engine():
             _ocr_engine = RapidOCR()
             logger.info("RapidOCR ONNX engine initialized successfully.")
         except Exception as e:
-            logger.warning(f"Could not initialize RapidOCR engine: {e}")
+            logger.warning(f"RapidOCR engine initialization skipped: {e}")
             _ocr_engine = False
     return _ocr_engine
 
 def run_ocr_on_image(img_bytes: bytes) -> str:
     """Runs RapidOCR on image bytes and returns 2D coordinate-reconstructed text lines."""
-    engine = get_ocr_engine()
-    if not engine:
-        return ""
     try:
+        engine = get_ocr_engine()
+        if not engine:
+            return ""
+        
         try:
             pil_img = Image.open(io.BytesIO(img_bytes))
             pil_img = ImageOps.exif_transpose(pil_img)
+            # Ensure reasonable dimensions
+            if max(pil_img.size) > 1200:
+                pil_img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
             buf = io.BytesIO()
-            pil_img.save(buf, format="JPEG")
+            pil_img.save(buf, format="JPEG", quality=80)
             img_bytes = buf.getvalue()
         except Exception:
             pass
+
         results, elapse = engine(img_bytes)
         if not results:
             return ""
